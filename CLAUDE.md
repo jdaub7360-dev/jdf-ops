@@ -9,3 +9,4 @@
 - Never expose the service account key or password, never loosen the sheet allowlist in `lib/google.js`, and never serve `private/` publicly.
 - Money always shows with a dollar sign, including raw sheet values in the All data tab (see `dtMoney` in `src/datatab.js`) and assistant answers.
 - The Ask tab calls `/api/ask`, which needs `ANTHROPIC_API_KEY`. All math happens in `lib/tools.js`; the model only chooses lookups. Keep payroll and pay data out of the tools.
+- The Overview To order list marks items Ordered through `/api/marks`. Marks live in Supabase table `order_marks` when SUPABASE_URL and SUPABASE_SERVICE_KEY are set (shared by both phones), otherwise in that browser only. A mark clears when the count rises above the marked count or after 7 days. Still nothing writes to the Google Sheets.
