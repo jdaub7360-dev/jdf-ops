@@ -31,7 +31,7 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'private, no-store');
   if (!isAuthed(req)) { res.status(401).json({ message: 'Signed out' }); return; }
   if (req.method !== 'POST') { res.status(405).json({ message: 'POST only' }); return; }
-  if (!process.env.ANTHROPIC_API_KEY) { res.status(503).json({ message: 'The assistant is not set up yet. Add ANTHROPIC_API_KEY in Vercel and redeploy.' }); return; }
+  if (!process.env.ANTHROPIC_API_KEY) { const k = process.env.ANTHROPIC_API_KEY; res.status(503).json({ message: 'The assistant is not set up yet. ' + (k === undefined ? 'This deployment cannot see ANTHROPIC_API_KEY.' : 'ANTHROPIC_API_KEY is present but empty.') + ' Environment: ' + (process.env.VERCEL_ENV || 'unknown') + ', deployment ' + String(process.env.VERCEL_GIT_COMMIT_SHA || 'unknown').slice(0, 7) + '. Add it under Production in Vercel and redeploy.' }); return; }
   if (limited(ipOf(req))) { res.status(429).json({ message: 'Too many questions this hour. Try again later.' }); return; }
   let body = req.body; if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   const question = String((body && body.question) || '').trim().slice(0, 500);
