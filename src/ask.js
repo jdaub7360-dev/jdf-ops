@@ -39,7 +39,7 @@ async function askSend(q){q=String(q||'').trim();if(askBusy||!q)return;askBusy=t
   const j=await r.json().catch(()=>({}));if(!r.ok){item.a=j.message||'The assistant could not answer right now.';item.err=true}else{item.a=j.answer;item.used=j.used}}
  catch(e){item.a='Could not reach the server. Try again.';item.err=true}
  askBusy=false;const b2=$('#askb');if(b2)b2.disabled=false;if($('#askl'))askPaint()}
-const ASKCSS=`#askfab{position:fixed;right:16px;bottom:16px;z-index:40;background:var(--M);color:#fff;border:0;border-radius:999px;font:inherit;font-weight:650;font-size:15px;padding:13px 22px;box-shadow:0 4px 14px #0004;cursor:pointer}
+const ASKCSS=`#askfab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:40;background:var(--M);color:#fff;border:0;border-radius:999px;font:inherit;font-weight:650;font-size:15px;padding:12px 22px;box-shadow:0 6px 18px #0004;cursor:pointer}#askfab:hover{filter:brightness(1.06)}
 #askp{position:fixed;z-index:50;right:16px;bottom:16px;width:400px;height:min(640px,calc(100vh - 32px));background:var(--bg);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px #0006;display:none;flex-direction:column;overflow:hidden}#askp.on{display:flex}
 @media(max-width:520px){#askp{right:0;left:0;bottom:0;width:auto;height:88vh;border-radius:16px 16px 0 0}}
 .askhd{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--card)}.askhd b{flex:1;font-size:15px}.askhd button{background:none;border:0;color:var(--ink2);font:inherit;font-size:13px;cursor:pointer;padding:6px 8px}

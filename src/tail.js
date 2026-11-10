@@ -67,7 +67,8 @@ function onEv(d,ev){if(ev.type==='data'){const p=payloadOf(ev.result);let v=null
   LIVE[d.k]=v;STS[d.k]={at:(ev.result.cache&&ev.result.cache.storedAt)||Date.now()};if(d.k==='tips:summary')syncTabs()}
  else{const code=ev.error.code;if(d.opt&&!AUTHZ.has(code)){return}STS[d.k]={err:code,msg:ev.error.message};if(AUTHZ.has(code))delete LIVE[d.k]}
  refresh()}
-$('#nav').innerHTML=tabs.map(t=>`<button role="tab" data-t="${t}">${t}</button>`).join('');
+const TABLAB={'All data':'Data','Data health':'Health'};$('#nav').innerHTML=tabs.map(t=>`<button role="tab" data-t="${t}">${TABLAB[t]||t}</button>`).join('');
+const navHint=()=>{const n=$('#nav');n.classList.toggle('more',n.scrollLeft+n.clientWidth<n.scrollWidth-6)};$('#nav').addEventListener('scroll',navHint);window.addEventListener('resize',navHint);setTimeout(navHint,0);
 $('#nav').onclick=e=>{const b=e.target.closest('button');if(b)show(b.dataset.t)};
 current=tabs.find(t=>t.replace(' ','').toLowerCase()==location.hash.slice(1))||'Overview';
 R=build();show(current);paintStatus();

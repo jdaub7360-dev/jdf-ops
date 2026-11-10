@@ -36,6 +36,23 @@ th:first-child,td:first-child{text-align:left}th{font-weight:600;color:var(--ink
 .grid2{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
 .foot{margin-top:30px;font-size:12px;color:var(--mut)}
 @media(max-width:520px){.kpi .v{font-size:21px}}
+/* design pass */
+body{-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
+.wrap{padding:14px 16px 110px}
+header{padding:8px 0 12px;gap:16px}header h1{font-size:19px;font-weight:700;letter-spacing:-.01em}header p{font-size:13px}
+nav{background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);gap:2px;margin:6px 0 16px;scrollbar-width:none}nav::-webkit-scrollbar{display:none}
+nav button{font-size:14.5px;padding:11px 12px;border-bottom-width:2px}nav button:hover{color:var(--ink)}nav button[aria-selected=true]{border-bottom-color:var(--ink);font-weight:650}
+nav.more{-webkit-mask-image:linear-gradient(90deg,#000 86%,transparent);mask-image:linear-gradient(90deg,#000 86%,transparent)}
+h2{font-size:20px;font-weight:700;letter-spacing:-.015em;margin:30px 0 8px}main>h2:first-child,main>style+h2{margin-top:8px}
+.sub{line-height:1.5;max-width:68ch}
+.kpi,.card{border-radius:14px;box-shadow:0 1px 2px #0000000d}.kpi{padding:14px 16px}.kpi .v{font-size:26px}.kpi .l{font-weight:560}
+th{color:var(--mut);font-size:12px;font-weight:600}td,th{padding:9px 8px}
+.sc1{position:relative;overflow:hidden;--svc:var(--line)}.sc1::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--svc)}.sc1.sv0{--svc:var(--g)}.sc1.sv1{--svc:var(--warn)}.sc1.sv2{--svc:var(--crit)}.sc1{padding-top:17px!important}
+.sch .tag{padding:3px 10px;border-radius:999px;background:color-mix(in srgb,currentColor 13%,transparent);font-size:12px}
+.sch b{font-size:16px}
+button:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+.foot{line-height:1.5;max-width:68ch}
+@media(max-width:520px){.logo svg{height:36px}header{gap:12px}header h1{font-size:17px}.wrap{padding:10px 14px 110px}h2{font-size:19px;margin-top:26px}}
 </style></head><body><div class="wrap">
 <header><div class="logo" aria-label="The JDF Group"><!--LOGO--></div><div><h1>Operations dashboard</h1><p>Pulp Juice &amp; Smoothie Bar · Ashland, Wadsworth, Massillon · Snapshot through Mon Nov 9, 2026</p></div></header>
 <nav role="tablist" id="nav"></nav><main id="main"></main>
