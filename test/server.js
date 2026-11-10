@@ -5,6 +5,7 @@ const http = require('node:http');
 const url = require('node:url');
 const path = require('node:path');
 const F = require('../src/fixtures.json');
+const HOURLY = require('./hourly.fixture.json'); // sample Hourly Sales rows, test only, never shipped in the dashboard
 const g = require('../lib/google');
 const parById = { '1K2a': 'Ashland', '10j2': 'Wadsworth', '1SGH': 'Massillon' };
 g.getValues = async (id, range) => {
@@ -13,7 +14,7 @@ g.getValues = async (id, range) => {
   let v;
   if (id.startsWith('1WTb')) v = F.sales[tab];
   else if (id.startsWith('1j9A')) v = F.labor[tab];
-  else if (id.startsWith('18lc')) v = F.sysco;
+  else if (id.startsWith('18lc')) v = tab === 'Hourly Sales' ? HOURLY : F.sysco;
   else if (id.startsWith('1yXf')) v = range.startsWith('Summary') ? F.tips.summary : F.tips.tabs[tab];
   else if (id.startsWith('1PBd')) v = tab === 'Totals' ? F.enh.totals : tab === 'Usage' ? F.enh.usage : tab === 'Order' ? F.enh.order : tab === 'Enhancer Store Log' ? F.enh.storelog : F.enh.gnc;
   else if (id.startsWith('1xqF')) v = range.startsWith('Totals') ? F.cookie.totals : F.cookie.orders;

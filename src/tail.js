@@ -1,7 +1,7 @@
-const tabs=['Overview','Sales','Labor','Tips','Supply','Orders','All data','Data health'];
+const tabs=['Overview','Sales','Hourly','Labor','Tips','Supply','Orders','All data','Data health'];
 const GS='Google Sheets',GD='Google Drive',FID={sales:'1WTbr7-glp5qvUaic9Rmlg8BsB1XbP1FbqHffaIDMf6g',labor:'1j9Aep9pRCy-Os80DMD3zWnKCOpV3YVeakJuol9EqOE4',sysco:'18lcS1wZobeEVDsP4sumjXqhn298XzpsGuhXShoAKcxM',tips:'1yXfOsp9E6Qaiwq02LfobMQRZqEGBzktxJM_zHQmzFjc',enh:'1PBd6rouiKWmcOYpfXfsGhzpYqXcL_d5120e2UN19dAA',cookie:'1xqF-jZuhJUeitAZFKvudqB_2SqIFDO7vBU4KgBHRfg8',par:{Ashland:'1K2aGrtoBq_x2dTrzw3isz9fZ2ygDU16zGLZ2Y2jrDts',Wadsworth:'10j2P0GsB3f-gUgjSYHzkjo4op2Ui9LZHHJhT8hULOh4',Massillon:'1SGH3hq1KgAItnEksO7AiH0GrkYKVFUbtcH-9zrvYqPg'}};
-const MODS={core:[...S.map(s=>'sales:'+s),...S.map(s=>'labor:'+s)],sysco:['sysco'],tips:['tips:summary'],enh:['enh:totals','enh:usage','enh:order','enh:gnc'],par:S.map(s=>'par:'+s),cookie:['cookie:totals','cookie:orders']};
-const MODNAME={core:'Sales and labor',sysco:'Sysco',tips:'Tips',enh:'Enhancers',par:'PAR counts',cookie:'Cookies'};
+const MODS={core:[...S.map(s=>'sales:'+s),...S.map(s=>'labor:'+s)],sysco:['sysco'],tips:['tips:summary'],enh:['enh:totals','enh:usage','enh:order','enh:gnc'],par:S.map(s=>'par:'+s),hourly:['hourly'],cookie:['cookie:totals','cookie:orders']};
+const MODNAME={core:'Sales and labor',sysco:'Sysco',tips:'Tips',enh:'Enhancers',par:'PAR counts',hourly:'Hourly sales',cookie:'Cookies'};
 const gv=(id,range,tool)=>({srv:GS,tool:'get_values',input:{spreadsheetId:id,range}});
 const DEFS=[];
 S.forEach(s=>{DEFS.push({k:'sales:'+s,...gv(FID.sales,`${s}!A3:N43`),every:30000,parse:r=>parseGrid(r),ok:g=>Object.keys(g.days).length>=28&&!!g.years[CFG.year-1]});
@@ -9,6 +9,7 @@ S.forEach(s=>{DEFS.push({k:'sales:'+s,...gv(FID.sales,`${s}!A3:N43`),every:30000
  DEFS.push({k:'par:'+s,...gv(FID.par[s],"'PAR Sheet'!A1:B170"),every:120000,parse:r=>r,ok:r=>r.length>3});
  DEFS.push({k:'drv:'+s,srv:GD,tool:'get_file_metadata',input:{fileId:FID.par[s],excludeContentSnippets:true},every:300000,opt:true,parseObj:p=>p&&(p.modifiedTime||p.modified_time)||null})});
 DEFS.push({k:'sysco',...gv(FID.sysco,"'Sysco Orders'!A3:I400"),every:60000,parse:parseSysco,ok:o=>S.some(s=>o[s].length)});
+DEFS.push({k:'hourly',...gv(FID.sysco,"'Hourly Sales'!A:E"),every:60000,parse:parseHourly,ok:h=>S.some(s=>Object.keys(h[s]).length)});
 DEFS.push({k:'tips:summary',...gv(FID.tips,'Summary!A3:E400'),every:60000,parse:r=>parseTipsSummary(r,CFG.year),ok:p=>p.length>=10});
 DEFS.push({k:'enh:totals',...gv(FID.enh,'Totals!A1:K24'),every:120000,parse:parseEnhTotals,ok:t=>t.items.length>=5});
 DEFS.push({k:'enh:usage',...gv(FID.enh,'Usage!A1:H400'),every:120000,parse:parseEnhUsage,ok:u=>u.length>=5});
@@ -21,7 +22,7 @@ DEFS.push({k:'cookie:totals',...gv(FID.cookie,'Totals!A1:I16'),every:120000,pars
 DEFS.push({k:'cookie:orders',...gv(FID.cookie,"'Cookie Orders'!A1:O40"),every:120000,parse:parseCookieOrders,ok:()=>true});
 const SNAP={};const fx=D.fx;
 S.forEach(s=>{SNAP['sales:'+s]=parseGrid(fx.sales[s]);SNAP['labor:'+s]=parseGrid(fx.labor[s]);SNAP['par:'+s]=fx.par[s];SNAP['drv:'+s]=fx.par.modified[s]});
-SNAP.sysco=parseSysco(fx.sysco);SNAP['tips:summary']=parseTipsSummary(fx.tips.summary,CFG.year);SNAP['enh:totals']=parseEnhTotals(fx.enh.totals);SNAP['enh:usage']=parseEnhUsage(fx.enh.usage);SNAP['enh:order']=parseEnhOrder(fx.enh.order);SNAP['enh:gnc']=parseGnc(fx.enh.gnc);SNAP['enh:storelog']=parseEnhStoreLog(fx.enh.storelog||[]);SNAP['cookie:totals']=parseCookieTotals(fx.cookie.totals);SNAP['cookie:orders']=parseCookieOrders(fx.cookie.orders);
+SNAP.sysco=parseSysco(fx.sysco);SNAP.hourly=parseHourly([]);SNAP['tips:summary']=parseTipsSummary(fx.tips.summary,CFG.year);SNAP['enh:totals']=parseEnhTotals(fx.enh.totals);SNAP['enh:usage']=parseEnhUsage(fx.enh.usage);SNAP['enh:order']=parseEnhOrder(fx.enh.order);SNAP['enh:gnc']=parseGnc(fx.enh.gnc);SNAP['enh:storelog']=parseEnhStoreLog(fx.enh.storelog||[]);SNAP['cookie:totals']=parseCookieTotals(fx.cookie.totals);SNAP['cookie:orders']=parseCookieOrders(fx.cookie.orders);
 const SNAPTABS=Object.values(fx.tips.tabs).map(parseTipsTab);
 const LIVE={},STS={},TABW={};let mcp=null,pending=true,current='Overview',lastSig='';
 const AUTHZ=new Set(['needs_reauth','server_not_connected','blocked_by_policy','approval_required','not_in_manifest','selection_required']);
@@ -34,7 +35,7 @@ function errText(code,msg){return({needs_reauth:'Google needs to be reconnected.
 function build(){const live=m=>MODS[m].every(k=>LIVE[k]);const cl=live('core');
  const Sg={},Lg={};S.forEach(s=>{Sg[s]=cl?LIVE['sales:'+s]:SNAP['sales:'+s];Lg[s]=cl?LIVE['labor:'+s]:SNAP['labor:'+s]});
  const res=computeLive(Sg,Lg),asOf=Date.parse(res.meta.asOf);
- res.sysco=syscoWeekly(gk('sysco'),res.weeks,res.weekly);
+ res.sysco=syscoWeekly(gk('sysco'),res.weeks,res.weekly);res.hourly=computeHourly(gk('hourly'));
  const per=gk('tips:summary');res.tips=computeTips(per,res.sumSales,asOf);{const cp=per.filter(p=>p.start<=asOf&&p.end>=asOf).sort((a,b)=>b.start-a.start)[0];res.tipsNow=computeTipsNow(per,asOf,res.sumSales,cp?LIVE['tips:tab:'+cp.label]:null)}
  const tabKeys=Object.keys(LIVE).filter(k=>k.startsWith('tips:tab:'));res.spikes=tipSpikes(live('tips')?tabKeys.map(k=>LIVE[k]):SNAPTABS);
  const lastBy=log=>{const o={};(log||[]).forEach(x=>{if(!o[x.store]||x.t>o[x.store])o[x.store]=x.t});return o};res.enhCounts=lastBy(gk('enh:storelog'));res.cookieCounts=lastBy(gk('cookie:storelog'));res.enhModified=LIVE['drv:enh']||null;res.enh=computeEnh(gk('enh:totals'),gk('enh:usage'),gk('enh:order'));res.gnc=gk('enh:gnc');res.storeBurn=computeStoreBurn(gk('enh:storelog')||[]);
@@ -58,7 +59,7 @@ function paintStatus(){const el=$('#sync');if(!el)return;const m=R.meta,errs=DEF
  el.innerHTML=`<span class="dot2 ${c}"></span>${txt} ${btn}<br><span class="src">${thru}.${same?'':' Last entry: '+S.map(s=>s+' '+wl(m.last[s])).join(', ')+'.'}</span>${chips?`<div class="chips">${chips}</div>`:''}`;
  const rf=$('#rf');if(rf)rf.onclick=()=>{mcp&&(mcp.invalidate(GS,'get_values').catch(()=>{}),mcp.invalidate(GD,'get_file_metadata').catch(()=>{}))};
  const al=$('#al');if(al)al.onclick=()=>{const d=DEFS[0];mcp.callTool(d.srv,d.tool,d.input).then(()=>mcp.invalidate()).catch(()=>{})}}
-function show(t,keep){current=t;const y=window.scrollY;uid=0;$('#main').innerHTML=T[t]();[...$('#nav').children].forEach(b=>b.setAttribute('aria-selected',b.dataset.t==t));try{history.replaceState(null,'','#'+t.replace(' ','').toLowerCase())}catch(e){}if(t==='All data')dtInit();if(t==='Orders')ordInit();window.scrollTo(0,keep?y:0)}
+function show(t,keep){current=t;const y=window.scrollY;uid=0;$('#main').innerHTML=T[t]();[...$('#nav').children].forEach(b=>b.setAttribute('aria-selected',b.dataset.t==t));try{history.replaceState(null,'','#'+t.replace(' ','').toLowerCase())}catch(e){}if(t==='All data')dtInit();if(t==='Orders')ordInit();if(t==='Hourly')hrsInit();window.scrollTo(0,keep?y:0)}
 function refresh(){let res;try{res=build()}catch(e){console.error(e);STS.parse={err:'parse'};const bk={...LIVE};Object.keys(LIVE).forEach(k=>delete LIVE[k]);res=build();Object.assign(LIVE,bk);}
  R=res;const sig=JSON.stringify(res)+Object.keys(LIVE).length;if(sig!==lastSig){lastSig=sig;show(current,true)}paintStatus()}
 function onEv(d,ev){if(ev.type==='data'){const p=payloadOf(ev.result);let v=null;

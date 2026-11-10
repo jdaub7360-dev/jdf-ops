@@ -69,4 +69,31 @@ function computeStoreBurn(log){const by={};log.forEach(x=>{const k=x.item+'|'+x.
   for(let i=1;i<a.length;i++){const p=a[i-1],c=a[i];if(c.recv==null){skipped++;continue}const days=(c.t-p.t)/864e5;if(days<=0)continue;if(days>28){skipped++;continue}const used=p.stock+c.recv-c.stock;if(used<0){skipped++;continue}cyc.push(used/days*7)}
   const use=cyc.slice(-3),burn=use.length?use.reduce((s,v)=>s+v,0)/use.length:null,[item,store]=k.split('|');
   (res[item]=res[item]||{})[store]={burn:burn==null?null:r2(burn),cycles:use.length,skipped,last:a[a.length-1].t}});return res}
-if(typeof module!=='undefined')module.exports={parseEnhStoreLog,computeStoreBurn,parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};
+
+// Hourly sales (Sysco and Daily Numbers workbook, tab Hourly Sales: Date, Store, Hour, Net Sales, Checks).
+// Only hours with activity have rows, so a missing hour is zero. Checks are real for Massillon only, never read a blank as zero.
+// Ashland and Wadsworth hourly money is item level (POS Sales Mix) and does not tie to the Daily Log, so it is for shape and share only.
+const HOURLY_CHECK_STORES={Massillon:1};
+function parseHourly(rows){const out={Ashland:{},Wadsworth:{},Massillon:{}};
+ (rows||[]).forEach(r=>{if(!r)return;const d=String(r[0]==null?'':r[0]).trim(),st=String(r[1]==null?'':r[1]).trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!out[st])return;
+  const hs=String(r[2]==null?'':r[2]).trim(),h=hs===''?NaN:Number(hs);if(!Number.isInteger(h)||h<0||h>23)return;
+  const sales=num(r[3]);if(sales==null)return;
+  const c=r[4]==null||String(r[4]).trim()===''?null:num(r[4]);
+  (out[st][d]=out[st][d]||{})[h]={s:sales,c:c}});
+ return out}
+function computeHourly(P){const res={};
+ Object.keys(P||{}).forEach(st=>{const days=P[st]||{},ds=Object.keys(days).sort();
+  if(!ds.length){res[st]={lo:null,hi:null,days:[],dow:[]};return}
+  let lo=24,hi=-1;ds.forEach(d=>Object.keys(days[d]).forEach(k=>{const h=+k;if(h<lo)lo=h;if(h>hi)hi=h}));
+  const n=hi-lo+1,sum=a=>a.reduce((p,c)=>p+c,0);
+  const list=ds.map(d=>{const sales=Array(n).fill(0),checks=Array(n).fill(0);let chk=!!HOURLY_CHECK_STORES[st];
+   Object.keys(days[d]).forEach(k=>{const x=days[d][k],i=+k-lo;sales[i]=x.s;if(x.c==null)chk=false;else checks[i]=x.c});
+   const tot=sum(sales);let pk=0;sales.forEach((v,i)=>{if(v>sales[pk])pk=i});
+   return{d:d,wd:new Date(d+'T12:00:00Z').getUTCDay(),sales:sales,checks:chk?checks:null,tot:tot,peak:pk}});
+  const dow=[0,1,2,3,4,5,6].map(w=>{const xs=list.filter(x=>x.wd===w);if(!xs.length)return{wd:w,n:0,avg:[],tot:0,peak:null,share:null};
+   const avg=Array(n).fill(0).map((_,i)=>sum(xs.map(x=>x.sales[i]))/xs.length),t=sum(avg);let pk=0;avg.forEach((v,i)=>{if(v>avg[pk])pk=i});
+   return{wd:w,n:xs.length,avg:avg,tot:t,peak:pk,share:t>0?avg[pk]/t:null}});
+  res[st]={lo:lo,hi:hi,days:list,dow:dow}});
+ return res}
+if(typeof module!=='undefined')module.exports={parseHourly,computeHourly,parseEnhStoreLog,computeStoreBurn,parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};
