@@ -31,7 +31,7 @@ try:
         pg.click('#nav button[data-t="Overview"]');pg.wait_for_timeout(800);n0=pg.locator('.tdb').count()
         pg.locator('.tdb').first.click();pg.wait_for_timeout(300)
         check('ordered mark moves item to waiting list',n0>0 and pg.locator('.tdb').count()==n0-1 and pg.locator('[data-unmark]').count()==1)
-        pg.locator('[data-unmark]').first.click();pg.wait_for_timeout(300)
+        pg.locator('summary:has-text("Ordered, waiting")').click();pg.locator('[data-unmark]').first.click();pg.wait_for_timeout(300)
         check('undo brings item back',pg.locator('.tdb').count()==n0)
         pg.click('#nav button[data-t="Ask"]');pg.fill('#askq','average saturday sales');pg.click('#askb');pg.wait_for_timeout(1500)
         ans=pg.inner_text('#askl');print(ans[:200].replace('\n',' '))
