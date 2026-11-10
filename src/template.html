@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JDF Group Operations Dashboard</title>
+<style>
+:root{--bg:#f6f6f3;--card:#fcfcfb;--ink:#161614;--ink2:#55554f;--mut:#85857d;--line:#e3e3dd;--grid:#ececE6;--A:#2f6fd6;--W:#7b4fc9;--M:#e78200;--g:#3e9f02;--warn:#b25e00;--crit:#b3261e;--info:#2f6fd6;--chip:#fff}
+@media(prefers-color-scheme:dark){:root{--bg:#121211;--card:#1a1a19;--ink:#f1f1ec;--ink2:#b5b5ad;--mut:#85857d;--line:#2d2d2a;--grid:#2a2a27;--A:#5b93e8;--W:#9a78e6;--M:#d27d14;--g:#6fc03a;--warn:#e0a040;--crit:#f2807a;--info:#7aa6ee}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:12px 14px 60px}
+header{display:flex;align-items:center;gap:14px;padding:6px 0 10px;flex-wrap:wrap}
+.logo{background:var(--chip);border-radius:10px;padding:6px 10px;display:flex}.logo svg{height:44px;width:auto;display:block}
+header h1{font-size:17px;margin:0;font-weight:650}header p{margin:0;font-size:12.5px;color:var(--ink2)}
+nav{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin:4px 0 14px;position:sticky;top:0;background:var(--bg);z-index:5;padding-top:4px}
+nav button{background:none;border:0;border-bottom:3px solid transparent;color:var(--ink2);font:inherit;font-weight:560;padding:10px 12px;cursor:pointer;white-space:nowrap}
+nav button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--M)}
+h2{font-size:18px;margin:22px 0 6px}h3{font-size:15px;margin:0 0 4px}
+.sub{color:var(--ink2);font-size:13px;margin:0 0 10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi,.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .l{font-size:12px;color:var(--ink2)}.kpi .v{font-size:24px;font-weight:700;letter-spacing:-.5px}.kpi .n{font-size:12px;color:var(--ink2)}
+.cards{display:grid;gap:10px;margin-top:10px}
+.card .tag{display:inline-flex;gap:5px;align-items:center;font-size:12px;font-weight:650;margin-bottom:4px}
+.tag.crit{color:var(--crit)}.tag.warn{color:var(--warn)}.tag.info{color:var(--info)}
+.card p{margin:4px 0}.ask{border-top:1px solid var(--line);margin-top:8px;padding-top:8px;font-weight:560}
+.src{font-size:11.5px;color:var(--mut)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line);vertical-align:top}
+th:first-child,td:first-child{text-align:left}th{font-weight:600;color:var(--ink2);font-size:12px}
+.tw{overflow-x:auto}.neg{color:var(--crit)}.pos{color:var(--g)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin:4px 0}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.chart{position:relative}.chart svg{width:100%;height:auto;display:block;touch-action:pan-y}
+.tip{position:absolute;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px;box-shadow:0 2px 8px #0003;display:none;z-index:3;white-space:nowrap}
+.tip b{display:block;margin-bottom:2px}
+.tog{font-size:12px;color:var(--ink2);background:none;border:1px solid var(--line);border-radius:6px;padding:3px 8px;cursor:pointer;margin-top:4px}
+.dt{display:none;margin-top:6px;max-height:260px;overflow:auto}.dt.on{display:block}
+.pill{display:inline-block;border-radius:999px;padding:1px 8px;font-size:12px;border:1px solid var(--line)}
+.grid2{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.foot{margin-top:30px;font-size:12px;color:var(--mut)}
+@media(max-width:520px){.kpi .v{font-size:21px}}
+</style></head><body><div class="wrap">
+<header><div class="logo" aria-label="The JDF Group"><!--LOGO--></div><div><h1>Operations dashboard</h1><p>Pulp Juice &amp; Smoothie Bar · Ashland, Wadsworth, Massillon · Snapshot through Mon Nov 9, 2026</p></div></header>
+<nav role="tablist" id="nav"></nav><main id="main"></main>
+<p class="foot">V1 static snapshot built from the JDF Drive reports. Labor dollars are labor % × net sales. Enhancer burn uses three weekly counts. November projections use 9 days of data. Live sync is the V2 step.</p>
+</div>
+<script>
+const D=/*DATA*/;
+const R=D.R,S=D.stores,C={Ashland:'var(--A)',Wadsworth:'var(--W)',Massillon:'var(--M)'};
+const $=(s,e=document)=>e.querySelector(s);
+const usd=n=>'$'+Math.round(n).toLocaleString('en-US'),usd2=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pc=(n,d=1)=>(n>0?'+':n<0?'−':'')+Math.abs(n).toFixed(d)+'%';
+const cls=n=>n<0?'neg':n>0?'pos':'';
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const wl=d=>{const[y,m,dd]=d.split('-');return MN[+m-1]+' '+(+dd)};
+const tips={};let uid=0;
+function tip(el,html,x,y){const t=$('.tip',el);t.innerHTML=html;t.style.display='block';const w=el.clientWidth;let l=x+12;if(l+t.offsetWidth>w)l=x-t.offsetWidth-12;t.style.left=Math.max(0,l)+'px';t.style.top=Math.max(0,y-10)+'px'}
+function legend(ss){return '<div class="legend">'+ss.map(s=>`<span><i style="background:${s.color}"></i>${s.name}</span>`).join('')+'</div>'}
+function dataTable(labels,ss,f){return '<div class="tw"><table><tr><th></th>'+ss.map(s=>`<th>${s.name}</th>`).join('')+'</tr>'+labels.map((l,i)=>`<tr><td>${l}</td>`+ss.map(s=>`<td>${s.vals[i]==null?'':f(s.vals[i])}</td>`).join('')+'</tr>').join('')+'</table></div>'}
+function line(title,sub,labels,ss,o={}){
+ const f=o.f||usd,W=640,H=250,m={l:52,r:12,t:10,b:26},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ let all=ss.flatMap(s=>s.vals.filter(v=>v!=null));let lo=o.min!=null?o.min:Math.min(...all),hi=Math.max(...all);
+ const pad=(hi-lo)*.08;hi+=pad;if(o.min==null)lo-=pad;
+ const X=i=>m.l+iw*i/(labels.length-1),Y=v=>m.t+ih*(1-(v-lo)/(hi-lo));
+ let g='';for(let k=0;k<=4;k++){const v=lo+(hi-lo)*k/4,y=Y(v);g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="var(--grid)"/><text x="${m.l-6}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--mut)">${(o.axf||f)(v)}</text>`}
+ const step=Math.ceil(labels.length/7);labels.forEach((l,i)=>{if(i%step==0)g+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--mut)">${l}</text>`});
+ const paths=ss.map(s=>{let d='';s.vals.forEach((v,i)=>{if(v!=null)d+=(d&&s.vals[i-1]!=null?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)});return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`}).join('');
+ const id='c'+(uid++);
+ setTimeout(()=>{const el=document.getElementById(id),svg=$('svg',el),cur=$('.cur',svg),dots=[...svg.querySelectorAll('.dot')];
+  const mv=e=>{const r=svg.getBoundingClientRect(),px=((e.touches?e.touches[0].clientX:e.clientX)-r.left)*W/r.width;let i=Math.round((px-m.l)/iw*(labels.length-1));i=Math.max(0,Math.min(labels.length-1,i));
+   cur.setAttribute('x1',X(i));cur.setAttribute('x2',X(i));cur.style.display='';
+   dots.forEach((d,k)=>{const v=ss[k].vals[i];if(v==null)d.style.display='none';else{d.style.display='';d.setAttribute('cx',X(i));d.setAttribute('cy',Y(v))}});
+   tip(el,`<b>${labels[i]}</b>`+ss.map(s=>`<div><span style="color:${s.color}">●</span> ${s.name}: ${s.vals[i]==null?'n/a':f(s.vals[i])}</div>`).join(''),(X(i)/W)*r.width,40)};
+  const lv=()=>{cur.style.display='none';dots.forEach(d=>d.style.display='none');$('.tip',el).style.display='none'};
+  svg.addEventListener('mousemove',mv);svg.addEventListener('touchmove',mv,{passive:true});svg.addEventListener('touchstart',mv,{passive:true});svg.addEventListener('mouseleave',lv);svg.addEventListener('touchend',lv)},0);
+ return `<div class="card"><h3>${title}</h3><p class="sub">${sub}</p>${legend(ss)}<div class="chart" id="${id}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">${g}${o.ref!=null?`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(o.ref)}" y2="${Y(o.ref)}" stroke="var(--mut)" stroke-dasharray="4 4"/>`:''}${paths}<line class="cur" y1="${m.t}" y2="${m.t+ih}" stroke="var(--mut)" style="display:none"/>${ss.map(s=>`<circle class="dot" r="4.5" fill="${s.color}" stroke="var(--card)" stroke-width="2" style="display:none"/>`).join('')}</svg><div class="tip"></div></div><button class="tog" onclick="this.nextElementSibling.classList.toggle('on')">Show data</button><div class="dt">${dataTable(labels,ss,f)}</div></div>`}
+function bars(title,sub,labels,ss,o={}){
+ const f=o.f||(v=>pc(v)),W=640,H=250,m={l:44,r:10,t:10,b:26},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ const all=ss.flatMap(s=>s.vals);let lo=Math.min(0,...all),hi=Math.max(0,...all);lo=Math.floor(lo/5)*5;hi=Math.ceil(hi/5)*5;
+ const Y=v=>m.t+ih*(1-(v-lo)/(hi-lo)),gw=iw/labels.length,bw=Math.min(18,(gw-8)/ss.length-2);
+ let g='';for(let v=lo;v<=hi;v+=5){g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--grid)"/><text x="${m.l-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--mut)">${Math.round(v)}%</text>`}
+ g+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--mut)"/>`;
+ const id='c'+(uid++);let b='';
+ labels.forEach((l,i)=>{const x0=m.l+gw*i+(gw-(bw+2)*ss.length)/2;g+=`<text x="${m.l+gw*(i+.5)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--mut)">${l}</text>`;
+  ss.forEach((s,k)=>{const v=s.vals[i],y=Y(v),y0=Y(0);b+=`<rect data-i="${i}" x="${x0+k*(bw+2)}" y="${Math.min(y,y0)}" width="${bw}" height="${Math.max(1,Math.abs(y-y0))}" rx="3" fill="${s.color}"/>`})});
+ setTimeout(()=>{const el=document.getElementById(id);el.querySelectorAll('rect').forEach(r=>{const h=e=>{const i=+r.dataset.i,rc=el.getBoundingClientRect();tip(el,`<b>${labels[i]}</b>`+ss.map(s=>`<div><span style="color:${s.color}">●</span> ${s.name}: ${f(s.vals[i])}</div>`).join(''),(e.touches?e.touches[0].clientX:e.clientX)-rc.left,30)};r.addEventListener('mousemove',h);r.addEventListener('touchstart',h,{passive:true});r.addEventListener('mouseleave',()=>$('.tip',el).style.display='none')})},0);
+ return `<div class="card"><h3>${title}</h3><p class="sub">${sub}</p>${legend(ss)}<div class="chart" id="${id}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">${g}${b}</svg><div class="tip"></div></div><button class="tog" onclick="this.nextElementSibling.classList.toggle('on')">Show data</button><div class="dt">${dataTable(labels,ss,f)}</div></div>`}
+const ser=(o,f=x=>x)=>S.map(s=>({name:s,color:C[s],vals:o[s].map(f)}));
+const kpi=(l,v,n)=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div></div>`;
+const tag=s=>({'Act now':'<span class="tag crit">▲ Act now</span>','Watch':'<span class="tag warn">● Watch</span>','Info':'<span class="tag info">ℹ Info</span>'})[s];
+const T={};
+T.Overview=()=>{const k=D.kp,p=R.projection;
+ return `<div class="kpis">${kpi('Sales YTD through Oct',usd(k.ytd),pc(k.ytd_pct)+' vs 2025, same months')}${kpi('Last 28 days',usd(k.cur),pc(k.cur_pct)+' vs prior 28 days')}${kpi('Labor, last 28 days',k.l28.toFixed(1)+'%','vs '+k.base.toFixed(1)+'% Mar to Jul')}${kpi('Sysco orders / sales',k.sysco.toFixed(1)+'%','last 3 full weeks, all stores')}${kpi('2026 full year, projected',usd(p.total),'vs '+usd(p.y25)+' in 2025')}</div>
+ <h2>What needs attention</h2><p class="sub">Ordered by dollars and urgency.</p><div class="cards">${D.cards.map(c=>`<div class="card">${tag(c.sev)}<h3>${c.title}</h3><p>${c.body}</p><p class="ask">${c.ask}</p><div class="src">${c.src}</div></div>`).join('')}</div>
+ <h2>Store snapshot</h2><div class="card tw"><table><tr><th>Store</th><th>28 day sales</th><th>vs prior</th><th>Last 7 vs prior 7</th><th>Labor 28d</th><th>Mar to Jul labor</th><th>YTD vs 2025</th></tr>${S.map(s=>{const w=R.w4[s],l=R.labor[s];return `<tr><td>${s}</td><td>${usd(w.cur)}</td><td class="${cls(w.pct)}">${pc(w.pct)}</td><td class="${cls(w.pct7)}">${pc(w.pct7)}</td><td>${l.l28.toFixed(1)}%</td><td>${l.base_pct.toFixed(1)}%</td><td class="${cls(R.ytd_oct.by_store[s])}">${pc(R.ytd_oct.by_store[s])}</td></tr>`}).join('')}</table></div>`};
+T.Sales=()=>{const p=R.pace,yo=R.yoy,lb=MN.slice(0,10);
+ const mo=MN.slice(0,11);
+ return `<div class="grid2">${line('Weekly sales by store','Monday to Sunday weeks. Latest week starting Nov 2.',R.weeks.map(wl),ser(R.weekly),{})}${bars('Year over year by month','Same month, 2026 vs 2025. January to October only.',lb,S.map(s=>({name:s,color:C[s],vals:yo[s]})))}</div>
+ <h2>November pacing</h2><div class="card tw"><table><tr><th>Store</th><th>Nov to date</th><th>$/day</th><th>Oct $/day</th><th>Nov 2025 $/day</th><th>Projected Nov</th><th>Nov 2025</th></tr>${S.map(s=>`<tr><td>${s}</td><td>${usd(p[s].mtd)}</td><td>${usd(p[s].per_day)}</td><td>${usd(p[s].oct_per_day)}</td><td>${usd(p[s].nov25_per_day)}</td><td>${usd(p[s].proj_seasonal)}</td><td>${usd(p[s].nov25)}</td></tr>`).join('')}</table></div><p class="sub">Projection scales October per day sales by last year's October to November ratio. Only 9 days are in, so treat the range as soft. Company November projection ${usd(R.projection.nov)}, December ${usd(R.projection.dec)}.</p>
+ <h2>Monthly sales</h2><div class="card tw"><table><tr><th>Month</th>${S.map(s=>`<th>${s} 2026</th><th>2025</th>`).join('')}</tr>${mo.map((m,i)=>`<tr><td>${m}${i==10?' (9 days)':''}</td>${S.map(s=>`<td>${usd(R.month_sales[s][i])}</td><td>${i<10?usd(R.month_sales_2025[s][i]):'<span class="src">full month '+usd(R.month_sales_2025[s][i])+'</span>'}</td>`).join('')}</tr>`).join('')}</table></div>`};
+T.Labor=()=>{const L=R.labor,dn=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+ return `<div class="grid2">${line('Weekly labor % by store','Weighted by sales. Dashed line is 15%.',R.weeks.map(wl),ser(R.weekly_labor_pct),{f:v=>v.toFixed(1)+'%',min:10,ref:15})}${line('Monthly labor % by store','Weighted by sales.',MN.slice(0,11),ser(R.month_labor_pct_w),{f:v=>v.toFixed(1)+'%',min:10})}</div>
+ <h2>Labor drift since August</h2><div class="card tw"><table><tr><th>Store</th><th>Mar to Jul %</th><th>Aug 1 to now %</th><th>Sales $/day then → now</th><th>Labor $/day then → now</th><th>Extra cost</th></tr>${S.map(s=>{const l=L[s];return `<tr><td>${s}</td><td>${l.base_pct.toFixed(1)}%</td><td>${l.recent_pct.toFixed(1)}%</td><td>${usd(l.base_sales_per_day)} → ${usd(l.rec_sales_per_day)}</td><td>${usd(l.base_labor_per_day)} → ${usd(l.rec_labor_per_day)}</td><td class="neg">${usd(l.excess)}</td></tr>`}).join('')}<tr><td><b>Total</b></td><td></td><td></td><td></td><td></td><td class="neg"><b>${usd(S.reduce((a,s)=>a+L[s].excess,0))}</b></td></tr></table></div><p class="sub">Extra cost is the gap between each store's actual labor since Aug 1 and what its own Mar to Jul labor percentage would have cost on the same sales. Some of it is minimum staffing.</p>
+ <h2>Labor $ budget by day of week</h2><p class="sub">Average over the last 12 weeks. A starting point for a daily labor budget per store.</p><div class="card tw"><table><tr><th>Day</th>${S.map(s=>`<th>${s} sales</th><th>labor $</th><th>%</th>`).join('')}</tr>${dn.map((d,i)=>`<tr><td>${d}</td>${S.map(s=>{const r=R.dow[s][i];return `<td>${usd(r.sales)}</td><td>${usd(r.labor_usd)}</td><td class="${r.labor_pct>20?'neg':''}">${r.labor_pct.toFixed(1)}%</td>`}).join('')}</tr>`).join('')}</table></div>
+ <h2>Highest labor % days, recent weeks</h2><div class="card tw"><table><tr><th>Date</th><th>Store</th><th>Sales</th><th>Labor %</th><th>Labor $</th></tr>${R.worst_labor.map(r=>`<tr><td>${wl(r.date)}</td><td>${r.store}</td><td>${usd(r.sales)}</td><td class="neg">${r.labor.toFixed(1)}%</td><td>${usd(r.sales*r.labor/100)}</td></tr>`).join('')}</table></div>`};
+T.Supply=()=>{const E=D.enh,sum=k=>E.reduce((a,e)=>a+(k=='draft'?e.draft*e.cost:e.model*e.cost),0);
+ const flag=e=>e.cover<2?'<span class="pill neg">Order now</span>':e.cover<4?'<span class="pill" style="color:var(--warn)">Low</span>':'';
+ const parBlock=s=>{const p=D.par[s];return `<div class="card"><h3>${s}</h3><p class="sub">Last count: ${p.updated}</p>${p.out.length?`<p><b>At zero:</b> ${p.out.join(', ')}</p>`:''}${p.low.length?`<p><b>Low:</b> ${p.low.join(', ')}</p>`:''}<p class="src">${p.note}</p></div>`};
+ return `<h2>Enhancer order</h2><p class="sub">Stock is tubs on hand across three stores. Burn is the average of the last three weekly counts. Model order targets three weeks of cover.</p><div class="card tw"><table><tr><th>Item</th><th>Tubs</th><th>Burn / wk</th><th>Weeks left</th><th></th><th>Your draft</th><th>Model</th></tr>${E.map(e=>`<tr><td>${e.item}</td><td>${e.stock}</td><td>${e.burn}</td><td>${e.cover.toFixed(1)}</td><td>${flag(e)}</td><td>${e.draft||''}</td><td>${e.model||''}</td></tr>`).join('')}<tr><td><b>Order cost</b></td><td></td><td></td><td></td><td></td><td><b>${usd2(sum('draft'))}</b></td><td><b>${usd2(sum('model'))}</b></td></tr></table></div><p class="sub">Inventory on hand is worth about ${usd(E.reduce((a,e)=>a+e.value,0))} at the costs in your sheet. Whey is carried at $35.71 but GNC invoices ran $41 to $49, so the true value is higher.</p>
+ <h2>Weekly Sysco orders as % of sales</h2><div class="grid2">${line('Sysco orders / sales by store','Weeks with fewer than two orders logged are dropped.',R.sysco.Ashland.filter(r=>r.n>=2).map(r=>wl(r.week)),S.map(s=>({name:s,color:C[s],vals:R.sysco[s].filter(r=>r.n>=2).map(r=>r.pct)})).map(x=>x),{f:v=>v.toFixed(1)+'%',min:0})}<div class="card"><h3>GNC whey price per tub</h3><p class="sub">2.5lb whey, from invoices.</p><table>${D.gnc.map(g=>`<tr><td>${g.date}</td><td>${usd2(g.unit)}</td></tr>`).join('')}</table></div></div>
+ <h2>Counts on the live PAR sheets</h2><div class="grid2">${S.map(parBlock).join('')}</div>
+ <h2>Cookies</h2><div class="card"><p class="sub">Only Ashland has a count. Last order ${D.cookie.order.date}: ${D.cookie.order.cookies} cookies, ${usd2(D.cookie.order.total)} (${usd2(D.cookie.order.per)} each).</p><table>${D.cookie.ashland.map(c=>`<tr><td>${c[0]}</td><td class="${c[1]==0?'neg':''}">${c[1]}</td></tr>`).join('')}<tr><td><b>Total on hand</b></td><td><b>${D.cookie.total}</b></td></tr></table></div>`};
+T.Tips=()=>`<h2>Tips by pay period</h2><p class="sub">Tips as % of sales, with year over year. Periods run 14 days starting Sunday and compare to 364 days earlier.</p><div class="grid2">${S.map(s=>`<div class="card tw"><h3>${s}</h3><table><tr><th>Period</th><th>Tips</th><th>% of sales</th><th>vs 2025</th></tr>${R.tips[s].map(r=>`<tr><td>${r.period}</td><td>${usd(r.tips)}</td><td>${r.pct.toFixed(2)}%</td><td class="${cls(r.yoy)}">${pc(r.yoy)}</td></tr>`).join('')}</table></div>`).join('')}</div><h2>Unusual days</h2><div class="card tw"><table><tr><th>Store</th><th>Date</th><th>Tips</th></tr>${R.tip_spikes.map(r=>`<tr><td>${r.store}</td><td>${wl(r.date)}</td><td class="neg">${usd2(r.tips)}</td></tr>`).join('')}</table></div><p class="sub">A normal Ashland day is about $90 in tips.</p>`;
+T['Data health']=()=>`<h2>Data health</h2><p class="sub">Issues found in the source reports. These limit what the dashboard can say today and are the cleanup list for V2.</p><div class="cards">${D.health.map(h=>`<div class="card"><h3>${h[0]}</h3><p>${h[1]}</p><p><b>Effect:</b> ${h[2]}</p><p class="src">Fix: ${h[3]}</p></div>`).join('')}</div>`;
+const tabs=Object.keys(T);
+function show(t){uid=0;$('#main').innerHTML=T[t]();[...$('#nav').children].forEach(b=>b.setAttribute('aria-selected',b.dataset.t==t));try{history.replaceState(null,'','#'+t.replace(' ','').toLowerCase())}catch(e){}window.scrollTo(0,0)}
+$('#nav').innerHTML=tabs.map(t=>`<button role="tab" data-t="${t}">${t}</button>`).join('');
+$('#nav').onclick=e=>{const b=e.target.closest('button');if(b)show(b.dataset.t)};
+const h=location.hash.slice(1);show(tabs.find(t=>t.replace(' ','').toLowerCase()==h)||'Overview');
+</script></body></html>

@@ -1,0 +1,10 @@
+{
+  "name": "jdf-ops",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JDF Group operations dashboard",
+  "engines": { "node": ">=20" },
+  "dependencies": { "googleapis": "^144.0.0" },
+  "devDependencies": { "playwright": "^1.48.0" },
+  "scripts": { "build": "python3 scripts/build.py", "test": "node test/run.js" }
+}
