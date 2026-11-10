@@ -25,6 +25,8 @@ Open the SQL editor in a Supabase project and run `supabase.sql`. Then copy the 
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | the whole contents of the downloaded key file, pasted as one value |
 | `APP_PASSWORD` | the shared password. Use a long passphrase, four or more random words |
 | `SESSION_SECRET` | a random string of 32 or more characters (`openssl rand -base64 32`) |
+| `ANTHROPIC_API_KEY` | optional, turns on the Ask tab. Create it in the Anthropic Console (console.anthropic.com), API keys. Billed per question, separate from a Claude subscription |
+| `ANTHROPIC_MODEL` | optional, defaults to `claude-sonnet-5-5` |
 | `SUPABASE_URL` | your Supabase project URL |
 | `SUPABASE_SERVICE_KEY` | the Supabase service_role key |
 

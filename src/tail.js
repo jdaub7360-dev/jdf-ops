@@ -1,4 +1,4 @@
-const tabs=['Overview','Orders','Sales','Labor','Supply','Tips','All data','Data health'];
+const tabs=['Overview','Orders','Ask','Sales','Labor','Supply','Tips','All data','Data health'];
 const GS='Google Sheets',GD='Google Drive',FID={sales:'1WTbr7-glp5qvUaic9Rmlg8BsB1XbP1FbqHffaIDMf6g',labor:'1j9Aep9pRCy-Os80DMD3zWnKCOpV3YVeakJuol9EqOE4',sysco:'18lcS1wZobeEVDsP4sumjXqhn298XzpsGuhXShoAKcxM',tips:'1yXfOsp9E6Qaiwq02LfobMQRZqEGBzktxJM_zHQmzFjc',enh:'1PBd6rouiKWmcOYpfXfsGhzpYqXcL_d5120e2UN19dAA',cookie:'1xqF-jZuhJUeitAZFKvudqB_2SqIFDO7vBU4KgBHRfg8',par:{Ashland:'1K2aGrtoBq_x2dTrzw3isz9fZ2ygDU16zGLZ2Y2jrDts',Wadsworth:'10j2P0GsB3f-gUgjSYHzkjo4op2Ui9LZHHJhT8hULOh4',Massillon:'1SGH3hq1KgAItnEksO7AiH0GrkYKVFUbtcH-9zrvYqPg'}};
 const MODS={core:[...S.map(s=>'sales:'+s),...S.map(s=>'labor:'+s)],sysco:['sysco'],tips:['tips:summary'],enh:['enh:totals','enh:usage','enh:order','enh:gnc'],par:S.map(s=>'par:'+s),cookie:['cookie:totals','cookie:orders']};
 const MODNAME={core:'Sales and labor',sysco:'Sysco',tips:'Tips',enh:'Enhancers',par:'PAR counts',cookie:'Cookies'};
@@ -56,7 +56,7 @@ function paintStatus(){const el=$('#sync');if(!el)return;const m=R.meta,errs=DEF
  el.innerHTML=`<span class="dot2 ${c}"></span>${txt} ${btn}<br><span class="src">${thru}. Last entry: ${S.map(s=>s+' '+wl(m.last[s])).join(', ')}.</span><div class="chips">${chips}</div>`;
  const rf=$('#rf');if(rf)rf.onclick=()=>{mcp&&(mcp.invalidate(GS,'get_values').catch(()=>{}),mcp.invalidate(GD,'get_file_metadata').catch(()=>{}))};
  const al=$('#al');if(al)al.onclick=()=>{const d=DEFS[0];mcp.callTool(d.srv,d.tool,d.input).then(()=>mcp.invalidate()).catch(()=>{})}}
-function show(t,keep){current=t;const y=window.scrollY;uid=0;$('#main').innerHTML=T[t]();[...$('#nav').children].forEach(b=>b.setAttribute('aria-selected',b.dataset.t==t));try{history.replaceState(null,'','#'+t.replace(' ','').toLowerCase())}catch(e){}if(t==='All data')dtInit();if(t==='Orders')ordInit();window.scrollTo(0,keep?y:0)}
+function show(t,keep){current=t;const y=window.scrollY;uid=0;$('#main').innerHTML=T[t]();[...$('#nav').children].forEach(b=>b.setAttribute('aria-selected',b.dataset.t==t));try{history.replaceState(null,'','#'+t.replace(' ','').toLowerCase())}catch(e){}if(t==='All data')dtInit();if(t==='Orders')ordInit();if(t==='Ask')askInit();window.scrollTo(0,keep?y:0)}
 function refresh(){let res;try{res=build()}catch(e){console.error(e);STS.parse={err:'parse'};const bk={...LIVE};Object.keys(LIVE).forEach(k=>delete LIVE[k]);res=build();Object.assign(LIVE,bk);}
  R=res;const sig=JSON.stringify(res)+Object.keys(LIVE).length;if(sig!==lastSig){lastSig=sig;show(current,true)}paintStatus()}
 function onEv(d,ev){if(ev.type==='data'){const p=payloadOf(ev.result);let v=null;
