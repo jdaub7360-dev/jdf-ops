@@ -20,6 +20,14 @@ function parseTipsSummary(rows,Y){let yr=Y,prev=null;const out=[];
 function computeTips(periods,sumS,asOf){const closed=periods.filter(p=>p.end<=asOf&&p.tips.Ashland!=null).sort((a,b)=>b.start-a.start).slice(0,8).reverse(),out={};
  STORES_.forEach(s=>{out[s]=closed.map(p=>{const ly=periods.find(q=>Math.abs(q.start-(p.start-364*864e5))<=864e5),sal=sumS(s,p.start,p.end),t=p.tips[s],t25=ly?ly.tips[s]:null,f=x=>{const d=new Date(x);return(d.getUTCMonth()+1)+'/'+d.getUTCDate()};
   return{period:f(p.start)+' to '+f(p.end),start:p.start,end:p.end,tips:t,tips25:t25,sales:Math.round(sal),pct:sal?r2(100*t/sal,2):null,yoy:t25?r2((t/t25-1)*100,1):null}})});return out}
+function computeTipsNow(periods,asOf,sumS,tab){const DAY=864e5,cur=periods.filter(p=>p.start<=asOf&&p.end>=asOf&&p.tips.Ashland!=null).sort((a,b)=>b.start-a.start)[0];if(!cur)return null;
+ const prev=periods.find(q=>Math.abs(q.start-(cur.start-14*DAY))<=DAY),ly=periods.find(q=>Math.abs(q.start-(cur.start-364*DAY))<=DAY),last=Math.min(asOf,cur.end),elapsed=Math.floor((last-cur.start)/DAY)+1,out={};
+ STORES_.forEach(s=>{const tips=cur.tips[s],ent=tab&&tab[s]&&tab[s].length?tab[s].filter(x=>x.t<=last):null,days=ent&&ent.length?ent.length:elapsed,
+  sales=ent&&ent.length?ent.reduce((a,x)=>a+sumS(s,x.t,x.t),0):sumS(s,cur.start,last),pct=sales>0?100*tips/sales:null,
+  pt=prev?prev.tips[s]:null,psal=prev?sumS(s,prev.start,prev.end):0,ppct=pt!=null&&psal>0?100*pt/psal:null,lt=ly?ly.tips[s]:null,proj=tips/days*14;
+  out[s]={tips,days,perDay:tips/days,proj,pct,prevTotal:pt,prevPct:ppct,vsPrev:pt>0?(proj/pt-1)*100:null,pp:pct!=null&&ppct!=null?pct-ppct:null,lyTotal:lt,vsLy:lt>0?(proj/lt-1)*100:null}});
+ const f=x=>{const d=new Date(x);return(d.getUTCMonth()+1)+'/'+d.getUTCDate()};
+ return{label:f(cur.start)+' to '+f(cur.end),elapsed,total:14,stores:out}}
 function parseTipsTab(rows){const out={Ashland:[],Wadsworth:[],Massillon:[]};
  rows.forEach(r=>{const m=String(r[0]??'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(!m)return;const t=Date.UTC(+m[3],+m[1]-1,+m[2]);STORES_.forEach((s,i)=>{const v=num(r[i+1]);if(v!=null)out[s].push({t,tips:v})})});return out}
 function tipSpikes(tabs){const spikes=[];STORES_.forEach(s=>{const all=[];tabs.forEach(tb=>tb[s].forEach(x=>all.push(x)));const md=median(all.map(x=>x.tips)),lim=Math.max(150,2.5*md);

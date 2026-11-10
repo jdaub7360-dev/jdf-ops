@@ -28,10 +28,10 @@ try:
         check('every module reports live',sync.startswith('Live') and 'snapshot' not in sync)
         pg.click('#nav button[data-t="Orders"]');pg.wait_for_timeout(300)
         check('orders tab renders',  'Next order day' in pg.inner_text('#main'))
-        pg.click('#nav button[data-t="Ask"]');pg.fill('#askq','average saturday sales');pg.click('#askb');pg.wait_for_timeout(1500)
+        pg.click('#askfab');pg.fill('#askq','average saturday sales');pg.click('#askb');pg.wait_for_timeout(1500)
         ans=pg.inner_text('#askl');print(ans[:200].replace('\n',' '))
         check('assistant answers from tool results','average' in ans and 'days' in ans and 'Ashland' in ans)
-        pg.click('#nav button[data-t="All data"]');pg.wait_for_timeout(1500)
+        pg.click('#askcl');pg.click('#nav button[data-t="All data"]');pg.wait_for_timeout(1500)
         check('all data tab renders','rows' in pg.inner_text('#main') or 'Colors' in pg.inner_text('#main'))
         pg.screenshot(path='/tmp/site_phone.png',full_page=False)
         check('no script errors',errs==[] ); 

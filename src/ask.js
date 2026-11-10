@@ -37,7 +37,17 @@ async function askSend(q){if(askBusy||!q.trim())return;askBusy=true;const item={
   if(r.status===401){location.reload();return}
   const j=await r.json().catch(()=>({}));if(!r.ok){item.a=j.message||'The assistant could not answer right now.';item.err=true}else{item.a=j.answer;item.used=j.used}}
  catch(e){item.a='Could not reach the server. Try again.';item.err=true}
- askBusy=false;const b2=$('#askb');if(b2)b2.disabled=false;if(current==='Ask')askPaint()}
+ askBusy=false;const b2=$('#askb');if(b2)b2.disabled=false;if($('#askl'))askPaint()}
 function askInit(){askPaint();const f=$('#askf');if(!f)return;f.onsubmit=e=>{e.preventDefault();const t=$('#askq');const q=t.value;t.value='';askSend(q)};
  $('#askq').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();f.requestSubmit()}};
  document.querySelectorAll('.askx').forEach(b=>b.onclick=()=>askSend(b.textContent))}
+
+// Global Ask button: opens the Ask panel on top of whatever tab is showing
+function askOpen(){let o=$('#askov');if(!o){o=document.createElement('div');o.id='askov';o.setAttribute('role','dialog');o.setAttribute('aria-label','Ask about the business');
+  o.innerHTML='<style>#askov{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;display:none}#askov.on{display:block}#askov .askin{max-width:760px;margin:0 auto;padding:12px 14px 80px}#askcl{position:sticky;top:8px;float:right;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:999px;font:inherit;font-size:14px;padding:8px 14px;cursor:pointer;z-index:2}#askfab{position:fixed;right:16px;bottom:16px;z-index:40;background:var(--M);color:#fff;border:0;border-radius:999px;font:inherit;font-weight:650;font-size:15px;padding:13px 22px;box-shadow:0 4px 14px #0004;cursor:pointer}</style><div class="askin"><button id="askcl" type="button">Close</button><div id="askbody"></div></div>';
+  document.body.appendChild(o);$('#askcl').onclick=askClose;document.addEventListener('keydown',e=>{if(e.key==='Escape'&&o.classList.contains('on'))askClose()})}
+ $('#askbody').innerHTML=T.Ask();o.classList.add('on');document.body.style.overflow='hidden';askInit();const q=$('#askq');if(q&&!/Mobi|Android|iPhone/.test(navigator.userAgent))q.focus();try{history.replaceState(null,'','#ask')}catch(e){}}
+function askClose(){const o=$('#askov');if(o)o.classList.remove('on');document.body.style.overflow='';try{history.replaceState(null,'','#'+current.replace(' ','').toLowerCase())}catch(e){}}
+(function(){const b=document.createElement('button');b.id='askfab';b.type='button';b.textContent='Ask';b.setAttribute('aria-label','Ask a question about the business');
+ const st=document.createElement('style');st.textContent='#askfab{position:fixed;right:16px;bottom:16px;z-index:40;background:var(--M);color:#fff;border:0;border-radius:999px;font:inherit;font-weight:650;font-size:15px;padding:13px 22px;box-shadow:0 4px 14px #0004;cursor:pointer}';document.head.appendChild(st);
+ b.onclick=askOpen;document.body.appendChild(b);if(location.hash==='#ask')setTimeout(askOpen,0)})();
