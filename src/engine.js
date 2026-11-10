@@ -1,5 +1,5 @@
 // ---- Live engine: parses Google Sheets grids and computes every figure the Sales and Labor tabs show.
-const CFG={year:2026,baseline:[2,1,6,31],/*Mar 1 to Jul 31 as [m0,d0,m1,d1] zero based months*/recentFrom:[7,1],days28:28,dowDays:84};
+const CFG={year:new Date().getFullYear(),baseline:[2,1,6,31],/*Mar 1 to Jul 31 as [m0,d0,m1,d1] zero based months*/recentFrom:[7,1],days28:28,dowDays:84};
 const STORES_=["Ashland","Wadsworth","Massillon"];
 const num=v=>{if(v==null||v==='')return null;if(typeof v==='number')return v;const t=String(v).replace(/[$,%\s]/g,'');if(t===''||t==='-')return null;const n=parseFloat(t);return isNaN(n)?null:n};
 const U=(y,m,d)=>Date.UTC(y,m,d),DAY=864e5,iso=t=>new Date(t).toISOString().slice(0,10);
@@ -13,7 +13,7 @@ function parseGrid(rows){ // rows: array of arrays from the sheet, starting at t
   return{days,years,pct};
 }
 function computeLive(S,L){ // S[store], L[store] are parsed grids
-  const Y=CFG.year,out={},raw={};
+  const hasYr=y=>STORES_.some(s=>((S[s].years[y]||{}).m||[]).some(v=>v>0));let Y=CFG.year;while(!hasYr(Y)&&Y>CFG.year-3)Y--;const out={},raw={};
   // pass 1: daily series and last day with sales per store
   let asOf=Infinity;const last={};
   STORES_.forEach(s=>{raw[s]=[];let lm=0;
@@ -83,7 +83,7 @@ function computeLive(S,L){ // S[store], L[store] are parsed grids
   const fam=comp.slice(Math.max(0,cm-3),cm),fam25=comp25.slice(Math.max(0,cm-3),cm),factor=sum(fam)/sum(fam25);
   const curProj=sum(STORES_.map(s=>out.pace[s].proj_seasonal)),rest=sum(comp25.slice(cm+1))*factor;
   out.projection={cur:Math.round(curProj),rest:Math.round(rest),closed:Math.round(ytd26),total:Math.round(ytd26+curProj+rest),factor:r2(factor,4),y25:r2(sum(comp25))};
-  // reconciliation: sheet's own 2026 total row vs sum of daily entries
+  // reconciliation: sheet's own current year total row vs sum of daily entries
   out.recon=[];STORES_.forEach(s=>{const t=S[s].years[Y]?.m||[];for(let m=0;m<=cm;m++){const d=ms[s][m],sh=t[m];if(sh!=null&&Math.abs(d-sh)>0.02)out.recon.push({store:s,month:m,daily:r2(d),sheet:sh})}});
   out.meta=meta;out.sumSales=sumS;out.days=D;return out;
 }
