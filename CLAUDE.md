@@ -8,4 +8,4 @@
 - Dashboard copy and replies to Justin: plain paragraphs, no hyphens, no motivational language.
 - Never expose the service account key or password, never loosen the sheet allowlist in `lib/google.js`, and never serve `private/` publicly.
 - Money always shows with a dollar sign, including raw sheet values in the All data tab (see `dtMoney` in `src/datatab.js`) and assistant answers.
-- The Ask tab calls `/api/ask`, which needs `ANTHROPIC_API_KEY`. All math happens in `lib/tools.js`; the model only chooses lookups. Keep payroll and pay data out of the tools.
+- Ask is a floating chat panel (button bottom right on every tab, not a tab) with a CSV export on each answer. It calls `/api/ask`, which needs `ANTHROPIC_API_KEY`. All math happens in `lib/tools.js`; the model only chooses lookups. Keep payroll and pay data out of the tools.
