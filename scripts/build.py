@@ -8,7 +8,7 @@ t=t.replace('const R=D.R,S=D.stores,','let R={},S=D.stores,')
 t=t.replace('<p>Pulp Juice &amp; Smoothie Bar · Ashland, Wadsworth, Massillon · Snapshot through Mon Nov 9, 2026</p>','<p>Pulp Juice &amp; Smoothie Bar · Ashland, Wadsworth, Massillon</p><p id="sync" class="syncbar"></p>')
 SYNC_CSS=open(S+'sync.css').read() if os.path.exists(S+'sync.css') else ''
 t=t.replace('</style>',SYNC_CSS+'</style>',1)
-t=re.sub(r'<p class="foot">.*?</p>','<p class="foot">Everything on this page reads live from the JDF Group Google Sheets. Sales and labor recheck about every 30 seconds, the rest every one to five minutes. Labor dollars are labor % × net sales. Projections use the days entered so far in the current month. <a href="#" onclick="fetch(\'/api/logout\',{method:\'POST\'}).then(()=>location.reload());return false">Sign out</a></p>',t,flags=re.S)
+t=re.sub(r'<p class="foot">.*?</p>','<p class="foot">Everything on this page reads live from the JDF Group Google Sheets. Sales and labor recheck about every 30 seconds, the rest every one to five minutes. Projections use the days entered so far in the current month. <a href="#" onclick="fetch(\'/api/logout\',{method:\'POST\'}).then(()=>location.reload());return false">Sign out</a></p>',t,flags=re.S)
 a=t.index('T.Overview=()=>'); b=t.index('const tabs=Object.keys(T);'); d=t.index('</script>',b)
 eng=open(S+'engine.js').read().split("if(typeof module")[0]+'\n'+open(S+'engine2.js').read().split("if(typeof module")[0]
 parts=[open(S+f).read() for f in ['newtabs.js','supplytabs.js','datatab.js','orders.js','ask.js','tail.js']]

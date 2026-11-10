@@ -45,15 +45,15 @@ function syncTabs(){const per=LIVE['tips:summary'];if(!per||!mcp)return;const wa
  want.filter(l=>!TABW[l]).forEach(l=>{const k='tips:tab:'+l;try{TABW[l]=mcp.watchTool(GS,'get_values',{spreadsheetId:FID.tips,range:`'${l}'!A1:D40`},ev=>{if(ev.type==='data'){const p=payloadOf(ev.result);if(p&&p.values){try{LIVE[k]=parseTipsTab(p.values)}catch(e){}refresh()}}},{refetchInterval:120000})}catch(e){}})}
 function paintStatus(){const el=$('#sync');if(!el)return;const m=R.meta,errs=DEFS.filter(d=>!d.opt&&STS[d.k]&&STS[d.k].err).map(d=>STS[d.k]),cl=MODS.core.every(k=>LIVE[k]);let c='warn',txt,btn='';
  const anyLive=Object.keys(MODS).some(mm=>MODS[mm].every(k=>LIVE[k])),allLive=Object.keys(MODS).every(mm=>MODS[mm].every(k=>LIVE[k]));
- if(allLive&&!errs.length){c='ok';const at=Math.max(...DEFS.map(d=>STS[d.k]?.at||0));txt=`Live from Google Sheets · checked ${tm(at)} · sales and labor recheck about every 30 seconds`;btn='<button class="tog" id="rf">Refresh now</button>'}
+ if(allLive&&!errs.length){c='ok';const at=Math.max(...DEFS.map(d=>STS[d.k]?.at||0));txt=`Live · checked ${tm(at)}`;btn='<button class="tog" id="rf">Refresh now</button>'}
  else if(anyLive){c='warn';txt=(errs.length?errText(errs[0].err,errs[0].msg)+' ':'Some sheets are still connecting. ')+'Sections not yet live show the '+wl(D.snapDate)+' snapshot.';btn='<button class="tog" id="rf">Refresh now</button>'}
  else if(errs.length){txt=errText(errs[0].err,errs[0].msg)+' Showing the '+wl(D.snapDate)+' snapshot.';if(errs[0].err==='approval_required')btn='<button class="tog" id="al">Allow access</button>'}
  else if(pending||mcp){txt='Connecting to Google. Showing the '+wl(D.snapDate)+' snapshot meanwhile.'}
  else{txt='Live sync is off in this view. Showing the '+wl(D.snapDate)+' snapshot. Open the page in claude.ai with Google connected for live data.'}
  const today=new Date(),td=Date.UTC(today.getFullYear(),today.getMonth(),today.getDate()),behind=Math.round((td-Date.parse(m.asOf))/864e5);
- const thru=`Sales and labor through ${dayName(m.asOf)}${cl&&behind>1?` <b style="color:var(--warn)">(${behind} days behind, check that every store entered its numbers)</b>`:''}`;
- const chips=Object.keys(MODS).map(mm=>`<span class="chip ${MODS[mm].every(k=>LIVE[k])?'on':''}">${MODNAME[mm]}: ${MODS[mm].every(k=>LIVE[k])?'live':'snapshot'}</span>`).join('');
- el.innerHTML=`<span class="dot2 ${c}"></span>${txt} ${btn}<br><span class="src">${thru}. Last entry: ${S.map(s=>s+' '+wl(m.last[s])).join(', ')}.</span><div class="chips">${chips}</div>`;
+ const thru=`Numbers through ${dayName(m.asOf)}${cl&&behind>1?` <b style="color:var(--warn)">(${behind} days behind, check that every store entered its numbers)</b>`:''}`;
+ const same=new Set(S.map(x=>m.last[x])).size===1,chips=(allLive&&!errs.length)?'':Object.keys(MODS).map(mm=>`<span class="chip ${MODS[mm].every(k=>LIVE[k])?'on':''}">${MODNAME[mm]}: ${MODS[mm].every(k=>LIVE[k])?'live':'snapshot'}</span>`).join('');
+ el.innerHTML=`<span class="dot2 ${c}"></span>${txt} ${btn}<br><span class="src">${thru}.${same?'':' Last entry: '+S.map(s=>s+' '+wl(m.last[s])).join(', ')+'.'}</span>${chips?`<div class="chips">${chips}</div>`:''}`;
  const rf=$('#rf');if(rf)rf.onclick=()=>{mcp&&(mcp.invalidate(GS,'get_values').catch(()=>{}),mcp.invalidate(GD,'get_file_metadata').catch(()=>{}))};
  const al=$('#al');if(al)al.onclick=()=>{const d=DEFS[0];mcp.callTool(d.srv,d.tool,d.input).then(()=>mcp.invalidate()).catch(()=>{})}}
 function show(t,keep){current=t;const y=window.scrollY;uid=0;$('#main').innerHTML=T[t]();[...$('#nav').children].forEach(b=>b.setAttribute('aria-selected',b.dataset.t==t));try{history.replaceState(null,'','#'+t.replace(' ','').toLowerCase())}catch(e){}if(t==='All data')dtInit();if(t==='Orders')ordInit();if(t==='Ask')askInit();window.scrollTo(0,keep?y:0)}

@@ -25,7 +25,7 @@ try:
         pg.fill('#pw','test-pass');pg.click('button');pg.wait_for_selector('#nav',timeout=8000);pg.wait_for_timeout(2500)
         sync=pg.inner_text('#sync');print(sync[:200])
         check('dashboard loads after login','Operations dashboard' in pg.inner_text('body'))
-        check('every module reports live',all(x in sync for x in ['Sales and labor: live','Sysco: live','Tips: live','Enhancers: live','PAR counts: live','Cookies: live']))
+        check('every module reports live',sync.startswith('Live') and 'snapshot' not in sync)
         pg.click('#nav button[data-t="Orders"]');pg.wait_for_timeout(300)
         check('orders tab renders',  'Next order day' in pg.inner_text('#main'))
         pg.click('#nav button[data-t="Ask"]');pg.fill('#askq','average saturday sales');pg.click('#askb');pg.wait_for_timeout(1500)
