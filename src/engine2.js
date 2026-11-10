@@ -42,14 +42,15 @@ function parseGnc(rows){const out=[];STORES_.forEach((s,i)=>{const c=i*5;rows.fo
  const seen=new Set(),res=[];out.sort((a,b)=>a.t-b.t).forEach(x=>{const k=x.t+'|'+x.unit;if(!seen.has(k)){seen.add(k);res.push({t:x.t,date:dlab(x.t),unit:x.unit})}});return res}
 // PAR sheets
 function qtyInfo(q){const s=String(q??'').trim();if(!s)return null;const nums=[...s.matchAll(/(\d+)\s*\/\s*(\d+)|(\d*\.?\d+)/g)].map(m=>m[1]?(+m[1])/(+m[2]):parseFloat(m[3]));return{raw:s,nums,need:/need/i.test(s)}}
-function analysePar(rows,modifiedIso,nowT){let counted=0,total=0,sec='';const out=[],low=[],items=[];
- rows.forEach(r=>{const name=String(r[0]??'').trim();if(!name||/^(item|pulp .*par sheet|store team)/i.test(name))return;const q=qtyInfo(r[1]);
+function parCountDate(rows){let t=null;(rows||[]).slice(0,6).forEach(r=>(r||[]).forEach(c=>{const s=String(c??''),m=s.match(/last counted\D{0,4}(\d{4})-(\d{2})-(\d{2})/i),u=s.match(/last counted\D{0,4}(\d{1,2})\/(\d{1,2})\/(\d{4})/i);if(m)t=Date.UTC(+m[1],+m[2]-1,+m[3]);else if(u)t=Date.UTC(+u[3],+u[1]-1,+u[2])}));return t}
+function analysePar(rows,modifiedIso,nowT){let counted=0,total=0,sec='';const out=[],low=[],items=[];const countDate=parCountDate(rows);
+ rows.forEach(r=>{const name=String(r[0]??'').trim();if(!name||/^(item|pulp .*par sheet|store team|last counted)/i.test(name))return;const q=qtyInfo(r[1]);
   if(r.length<2){sec=name;return}total++;if(!q)return;counted++;
   const disp=q.raw.replace(/^0\./,'.').replace(/\.$/,'');
   const zero=q.nums.length===1&&q.nums[0]===0,lw=q.need||(q.nums.length===1&&q.nums[0]<=0.3);items.push({name,sec,raw:q.raw,st:zero?'out':q.need?'need':lw?'low':'ok'});
   if(zero)out.push(name);else if(lw)low.push(name+' ('+(q.need?q.raw.toLowerCase():disp)+')')});
- const modT=modifiedIso?Date.parse(modifiedIso):null,age=modT?Math.floor((nowT-modT)/864e5):null;
- return{counted,out,low,items,modified:modifiedIso||null,ageDays:age}}
+ const modT=modifiedIso?Date.parse(modifiedIso):null,editAge=modT?Math.floor((nowT-modT)/864e5):null,age=countDate!=null?Math.floor((nowT-countDate)/864e5):editAge;
+ return{counted,out,low,items,modified:modifiedIso||null,countDate,editAge,ageDays:age}}
 // Cookies
 function parseCookieTotals(rows){const items=[];rows.forEach((r,i)=>{const a=String(r[0]??'').trim();if(i===0||!a||/^(total order|order info|last order|days since)/i.test(a))return;const st=[num(r[1]),num(r[2]),num(r[3])];if(st.every(x=>x==null)&&num(r[4])==null)return;items.push({name:a,stock:{Ashland:st[0],Wadsworth:st[1],Massillon:st[2]},total:num(r[4])})});return items}
 function parseCookieOrders(rows){const res={};STORES_.forEach((s,i)=>{const c=i*5;const xs=[];rows.forEach(r=>{const t=isoDate(r[c]),n=num(r[c+2]),tot=num(r[c+3]);if(t!=null&&n>0)xs.push({t,cookies:n,total:tot})});xs.sort((a,b)=>b.t-a.t);res[s]=xs[0]||null});return res}
