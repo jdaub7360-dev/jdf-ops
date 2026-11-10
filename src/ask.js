@@ -2,17 +2,35 @@
 const ASKH=[];let askBusy=false;
 const askEsc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 function mdLite(t){const lines=String(t).split('\n'),out=[];let i=0;const inl=s=>askEsc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+ const MONEYH=/\$|sales|revenue|cost|amount|price|spend|dollars/i,NOTH=/count|days|saturdays|sundays|weeks|tubs|cookies|orders|%|percent|rows/i;
  while(i<lines.length){const l=lines[i];
   if(/^\s*\|.*\|\s*$/.test(l)){const rows=[];while(i<lines.length&&/^\s*\|.*\|\s*$/.test(lines[i])){rows.push(lines[i].trim().replace(/^\||\|$/g,'').split('|').map(c=>c.trim()));i++}
    const body=rows.filter(r=>!r.every(c=>/^:?-{2,}:?$/.test(c)));const head=body.shift()||[];
-   out.push(`<div class="tw"><table><tr>${head.map(c=>`<th>${inl(c)}</th>`).join('')}</tr>${body.map(r=>`<tr>${r.map(c=>`<td>${inl(c)}</td>`).join('')}</tr>`).join('')}</table></div>`);continue}
-  if(l.trim()==='')out.push('');else out.push(`<p style="margin:6px 0">${inl(l)}</p>`);i++}
+   const mon=head.map(h=>MONEYH.test(h)&&!NOTH.test(h.replace(/\(.*?\$.*?\)/,'')));
+   const hd=head.map(h=>h.replace(/\s*\((?:sales\s*)?\$\)\s*$/i,'').replace(/\s*\(sales \$\)/i,''));
+   const cell=(c,j)=>{const isNum=/^-?[\d,]+(\.\d+)?$/.test(c);if(j>0&&isNum)return `<td class="n">${mon[j]?(c.startsWith('-')?'−$'+c.slice(1):'$'+c):inl(c)}</td>`;return `<td${j>0?' class="n"':''}>${inl(c)}</td>`};
+   out.push(`<div class="askt"><table><tr>${hd.map((c,j)=>`<th${j>0?' class="n"':''}>${inl(c)}</th>`).join('')}</tr>${body.map(r=>`<tr>${r.map(cell).join('')}</tr>`).join('')}</table></div>`);continue}
+  if(l.trim()==='')out.push('');else out.push(`<p class="aska">${inl(l)}</p>`);i++}
  return out.join('')}
 const ASKX=['Saturday and Sunday sales by store for the last 3 weeks','Average Monday sales by store since September','How much fiber blend is at each store right now?','How many cookies did each store order this fall?'];
-function askPaint(){const el=$('#askl');if(!el)return;el.innerHTML=ASKH.map(x=>`<div class="card" style="margin-bottom:10px"><div class="sub" style="margin:0 0 6px"><b>${askEsc(x.q)}</b></div>${x.a==null?'<p class="sub">Looking that up…</p>':x.err?`<p style="color:var(--bad,#b3261e)">${askEsc(x.a)}</p>`:mdLite(x.a)}${x.used&&x.used.length?`<details style="margin-top:6px"><summary class="sub" style="cursor:pointer">What it looked up</summary><p class="sub" style="margin:6px 0 0">${x.used.map(u=>askEsc(u.tool+' '+JSON.stringify(u.input))).join('<br>')}</p></details>`:''}</div>`).reverse().join('')}
-T.Ask=()=>`<h2>Ask about the business</h2><p class="sub">Ask in plain English about sales by day, weekday averages, inventory counts, enhancer use, or cookie orders. Numbers are calculated from your sheets, and each answer shows what it looked up.</p>
- <form id="askf" style="display:grid;gap:8px;margin:12px 0"><textarea id="askq" rows="2" maxlength="500" placeholder="For example: average Saturday sales at each store since September" class="ots" style="font:inherit"></textarea><div><button class="btn" id="askb" type="submit">Ask</button></div></form>
- <div class="opills">${ASKX.map(x=>`<button class="opill askx" type="button">${askEsc(x)}</button>`).join('')}</div><div id="askl"></div>`;
+function askPaint(){const el=$('#askl');if(!el)return;
+ if(!ASKH.length){el.innerHTML='<div class="askempty">Ask a question above or tap one of the examples. Answers are worked out from your sheets, and each one lists what it looked up.</div>';return}
+ el.innerHTML=ASKH.map(x=>`<div class="askc"><div class="askq">${askEsc(x.q)}</div>${x.a==null?'<div class="askwait"><span></span><span></span><span></span> Looking that up</div>':x.err?`<p class="aska" style="color:var(--crit)">${askEsc(x.a)}</p>`:mdLite(x.a)}${x.used&&x.used.length?`<details class="askd"><summary>What it looked up</summary><div>${x.used.map(u=>askEsc(u.tool.replace(/_/g,' ')+': '+Object.entries(u.input||{}).map(([k,v])=>k+' '+(Array.isArray(v)?v.join(', '):v)).join(', '))).join('<br>')}</div></details>`:''}</div>`).reverse().join('')}
+T.Ask=()=>`<style>
+.askbox{display:flex;gap:8px;align-items:flex-end;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px 8px 8px 14px;margin:12px 0 10px}.askbox:focus-within{border-color:var(--M);box-shadow:0 0 0 3px #e7820026}
+.askbox textarea{flex:1;border:0;background:transparent;color:var(--ink);font:inherit;font-size:16px;resize:none;outline:none;padding:6px 0;min-height:44px;max-height:140px}.askbox textarea::placeholder{color:var(--mut)}
+.askgo{background:var(--M);color:#fff;border:0;border-radius:10px;font:inherit;font-weight:650;padding:11px 20px;cursor:pointer;min-height:44px}.askgo:disabled{opacity:.5}
+.askch{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}.askx{background:var(--card);color:var(--ink2);border:1px solid var(--line);border-radius:999px;font:inherit;font-size:13px;padding:7px 13px;cursor:pointer;text-align:left}.askx:hover{border-color:var(--M);color:var(--ink)}
+.askc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:12px}.askq{font-size:12.5px;font-weight:650;color:var(--M);margin-bottom:8px}
+.aska{margin:6px 0;line-height:1.55}.aska:first-of-type{font-size:16.5px;font-weight:560}
+.askt{overflow-x:auto;margin:10px 0;border:1px solid var(--line);border-radius:10px}.askt table{font-size:14px}.askt th{background:var(--bg);padding:9px 12px}.askt td{padding:9px 12px}.askt tr:last-child td{border-bottom:0}.askt .n{text-align:right;font-variant-numeric:tabular-nums}.askt td:first-child{font-weight:600}
+.askd{margin-top:10px;font-size:12.5px;color:var(--mut)}.askd summary{cursor:pointer}.askd div{margin-top:6px;line-height:1.6}
+.askempty{color:var(--mut);font-size:13.5px;padding:18px 4px}
+.askwait{color:var(--ink2);font-size:14px;display:flex;gap:4px;align-items:center}.askwait span{width:7px;height:7px;border-radius:50%;background:var(--M);animation:askb 1s infinite}.askwait span:nth-child(2){animation-delay:.15s}.askwait span:nth-child(3){animation-delay:.3s;margin-right:6px}@keyframes askb{0%,80%,100%{opacity:.25}40%{opacity:1}}
+</style>
+ <h2>Ask about the business</h2><p class="sub">Sales by day, weekday averages, inventory counts, enhancer use and cookie orders. Numbers are calculated from your sheets, not guessed.</p>
+ <form id="askf" class="askbox"><textarea id="askq" rows="1" maxlength="500" placeholder="Ask a question, like average Saturday sales since September"></textarea><button class="askgo" id="askb" type="submit">Ask</button></form>
+ <div class="askch">${ASKX.map(x=>`<button class="askx" type="button">${askEsc(x)}</button>`).join('')}</div><div id="askl"></div>`;
 async function askSend(q){if(askBusy||!q.trim())return;askBusy=true;const item={q,a:null};ASKH.push(item);askPaint();const b=$('#askb');if(b)b.disabled=true;
  try{const hist=[];ASKH.slice(0,-1).filter(x=>x.a&&!x.err).slice(-3).forEach(x=>{hist.push({role:'user',content:x.q},{role:'assistant',content:x.a})});
   const r=await fetch('/api/ask',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,history:hist})});
