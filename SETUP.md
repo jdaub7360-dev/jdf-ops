@@ -39,7 +39,3 @@ In Vercel, Project, Settings, Domains, add `ops.thejdfgroup.com`. Vercel shows a
 ## Changing the password
 
 Change `APP_PASSWORD` in Vercel, then redeploy. To sign everyone out on every device, change `SESSION_SECRET` and redeploy.
-
-## Sharing Ordered marks between phones (optional)
-
-The To order list on the Overview works without Supabase, but marks then stay on the device that made them. To share them, create a free Supabase project, run `supabase.sql` in its SQL editor (it creates `order_marks`), and add `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` in Vercel, then redeploy.

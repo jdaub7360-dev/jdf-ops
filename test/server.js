@@ -31,7 +31,7 @@ http.createServer(async (rq, rs) => { let b = ''; for await (const c of rq) b +=
   if (Array.isArray(last.content) && last.content[0] && last.content[0].type === 'tool_result') { const r = JSON.parse(last.content[0].content); const x = r.results && r.results[0]; rs.end(JSON.stringify({ stop_reason: 'end_turn', content: [{ type: 'text', text: 'Result for ' + (x ? x.store + ' ' + x.weekday + ' average ' + x.average_sales + ' over ' + x.days_counted + ' days' : JSON.stringify(r).slice(0, 80)) }] })); }
   else rs.end(JSON.stringify({ stop_reason: 'tool_use', content: [{ type: 'tool_use', id: 't1', name: 'weekday_stats', input: { from: '2026-10-01', to: '2026-11-09', weekdays: ['Saturday'] } }] }));
 }).listen(3918);
-const routes = { '/': 'app', '/api/app': 'app', '/api/login': 'login', '/api/logout': 'logout', '/api/sheets': 'sheets', '/api/meta': 'meta', '/api/ask': 'ask', '/api/marks': 'marks' };
+const routes = { '/': 'app', '/api/app': 'app', '/api/login': 'login', '/api/logout': 'logout', '/api/sheets': 'sheets', '/api/meta': 'meta', '/api/ask': 'ask' };
 const server = http.createServer(async (req, res) => {
   const u = url.parse(req.url, true);
   const name = routes[u.pathname];
