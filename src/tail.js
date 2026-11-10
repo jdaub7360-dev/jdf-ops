@@ -12,6 +12,7 @@ DEFS.push({k:'sysco',...gv(FID.sysco,"'Sysco Orders'!A3:I400"),every:60000,parse
 DEFS.push({k:'tips:summary',...gv(FID.tips,'Summary!A3:E400'),every:60000,parse:r=>parseTipsSummary(r,CFG.year),ok:p=>p.length>=10});
 DEFS.push({k:'enh:totals',...gv(FID.enh,'Totals!A1:K24'),every:120000,parse:parseEnhTotals,ok:t=>t.items.length>=5});
 DEFS.push({k:'enh:usage',...gv(FID.enh,'Usage!A1:H400'),every:120000,parse:parseEnhUsage,ok:u=>u.length>=5});
+DEFS.push({k:'drv:enh',srv:GD,tool:'get_file_metadata',input:{fileId:FID.enh,excludeContentSnippets:true},every:300000,opt:true,parseObj:p=>p&&(p.modifiedTime||p.modified_time)||null});
 DEFS.push({k:'enh:order',...gv(FID.enh,'Order!A1:B30'),every:120000,parse:parseEnhOrder,ok:()=>true});
 DEFS.push({k:'enh:storelog',...gv(FID.enh,"'Enhancer Store Log'!A1:F3000"),every:300000,opt:true,parse:parseEnhStoreLog,ok:()=>true});
 DEFS.push({k:'enh:gnc',...gv(FID.enh,"'GNC Whey Orders'!A1:O60"),every:120000,parse:parseGnc,ok:()=>true});
@@ -35,7 +36,7 @@ function build(){const live=m=>MODS[m].every(k=>LIVE[k]);const cl=live('core');
  res.sysco=syscoWeekly(gk('sysco'),res.weeks,res.weekly);
  const per=gk('tips:summary');res.tips=computeTips(per,res.sumSales,asOf);
  const tabKeys=Object.keys(LIVE).filter(k=>k.startsWith('tips:tab:'));res.spikes=tipSpikes(live('tips')?tabKeys.map(k=>LIVE[k]):SNAPTABS);
- res.enh=computeEnh(gk('enh:totals'),gk('enh:usage'),gk('enh:order'));res.gnc=gk('enh:gnc');res.storeBurn=computeStoreBurn(gk('enh:storelog')||[]);
+ res.enhModified=LIVE['drv:enh']||null;res.enh=computeEnh(gk('enh:totals'),gk('enh:usage'),gk('enh:order'));res.gnc=gk('enh:gnc');res.storeBurn=computeStoreBurn(gk('enh:storelog')||[]);
  const parLive=live('par');res.par={};S.forEach(s=>res.par[s]=analysePar(gk('par:'+s),LIVE['drv:'+s]||(parLive?null:SNAP['drv:'+s]),Date.now()));
  const ct=gk('cookie:totals'),co=gk('cookie:orders'),first=S.map(s=>co[s]).find(x=>x&&x.total);
  res.cookie={items:ct,byStore:co,last:first||null};
