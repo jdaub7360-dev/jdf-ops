@@ -40,7 +40,7 @@ module.exports = async (req, res) => {
   const messages = [...history, { role: 'user', content: question }], used = [];
   try {
     for (let i = 0; i < 7; i++) {
-      const resp = await callClaude({ model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5', max_tokens: 1500, system: SYSTEM(), tools: defs, messages });
+      const resp = await callClaude({ model: process.env.ANTHROPIC_MODEL || 'claude-haiku-5-5', max_tokens: 1500, system: SYSTEM(), tools: defs, messages });
       if (resp.stop_reason === 'tool_use') {
         messages.push({ role: 'assistant', content: resp.content });
         const results = [];
