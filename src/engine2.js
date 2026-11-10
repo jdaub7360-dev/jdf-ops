@@ -53,4 +53,11 @@ function analysePar(rows,modifiedIso,nowT){let counted=0,total=0,sec='';const ou
 // Cookies
 function parseCookieTotals(rows){const items=[];rows.forEach((r,i)=>{const a=String(r[0]??'').trim();if(i===0||!a||/^(total order|order info|last order|days since)/i.test(a))return;const st=[num(r[1]),num(r[2]),num(r[3])];if(st.every(x=>x==null)&&num(r[4])==null)return;items.push({name:a,stock:{Ashland:st[0],Wadsworth:st[1],Massillon:st[2]},total:num(r[4])})});return items}
 function parseCookieOrders(rows){const res={};STORES_.forEach((s,i)=>{const c=i*5;const xs=[];rows.forEach(r=>{const t=isoDate(r[c]),n=num(r[c+2]),tot=num(r[c+3]);if(t!=null&&n>0)xs.push({t,cookies:n,total:tot})});xs.sort((a,b)=>b.t-a.t);res[s]=xs[0]||null});return res}
-if(typeof module!=='undefined')module.exports={parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};
+// Per store enhancer log (new tab written by the agent each count)
+function parseEnhStoreLog(rows){const out=[];(rows||[]).forEach(r=>{const t=isoDate(r[0]),st=String(r[1]??'').trim(),item=String(r[2]??'').trim(),stock=num(r[3]);if(t==null||!st||!item||stock==null)return;out.push({t,store:st,item,stock,recv:r[4]===undefined||String(r[4]).trim()===''?null:num(r[4])})});return out}
+function computeStoreBurn(log){const by={};log.forEach(x=>{const k=x.item+'|'+x.store;(by[k]=by[k]||[]).push(x)});const res={};
+ Object.keys(by).forEach(k=>{const a=by[k].sort((p,q)=>p.t-q.t),cyc=[];let skipped=0;
+  for(let i=1;i<a.length;i++){const p=a[i-1],c=a[i];if(c.recv==null){skipped++;continue}const days=(c.t-p.t)/864e5;if(days<=0)continue;if(days>10){skipped++;continue}const used=p.stock+c.recv-c.stock;if(used<0){skipped++;continue}cyc.push(used/days*7)}
+  const use=cyc.slice(-3),burn=use.length?use.reduce((s,v)=>s+v,0)/use.length:null,[item,store]=k.split('|');
+  (res[item]=res[item]||{})[store]={burn:burn==null?null:r2(burn),cycles:use.length,skipped,last:a[a.length-1].t}});return res}
+if(typeof module!=='undefined')module.exports={parseEnhStoreLog,computeStoreBurn,parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};

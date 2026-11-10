@@ -15,7 +15,7 @@ g.getValues = async (id, range) => {
   else if (id.startsWith('1j9A')) v = F.labor[tab];
   else if (id.startsWith('18lc')) v = F.sysco;
   else if (id.startsWith('1yXf')) v = range.startsWith('Summary') ? F.tips.summary : F.tips.tabs[tab];
-  else if (id.startsWith('1PBd')) v = tab === 'Totals' ? F.enh.totals : tab === 'Usage' ? F.enh.usage : tab === 'Order' ? F.enh.order : F.enh.gnc;
+  else if (id.startsWith('1PBd')) v = tab === 'Totals' ? F.enh.totals : tab === 'Usage' ? F.enh.usage : tab === 'Order' ? F.enh.order : tab === 'Enhancer Store Log' ? F.enh.storelog : F.enh.gnc;
   else if (id.startsWith('1xqF')) v = range.startsWith('Totals') ? F.cookie.totals : F.cookie.orders;
   else { const k = Object.keys(parById).find((x) => id.startsWith(x)); v = F.par[parById[k]]; }
   if (!v) throw Object.assign(new Error('no sample data'), { code: 'tool_error' });
