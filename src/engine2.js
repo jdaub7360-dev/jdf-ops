@@ -64,11 +64,28 @@ function parseCookieTotals(rows){const items=[];rows.forEach((r,i)=>{const a=Str
 function parseCookieOrders(rows){const res={};STORES_.forEach((s,i)=>{const c=i*5;const xs=[];rows.forEach(r=>{const t=isoDate(r[c]),n=num(r[c+2]),tot=num(r[c+3]);if(t!=null&&n>0)xs.push({t,cookies:n,total:tot})});xs.sort((a,b)=>b.t-a.t);res[s]=xs[0]||null});return res}
 // Per store enhancer log (new tab written by the agent each count)
 function parseEnhStoreLog(rows){const out=[];(rows||[]).forEach(r=>{const t=isoDate(r[0]),st=String(r[1]??'').trim(),item=String(r[2]??'').trim(),stock=num(r[3]);if(t==null||!st||!item||stock==null)return;out.push({t,store:st,item,stock,recv:r[4]===undefined||String(r[4]).trim()===''?null:num(r[4])})});return out}
-function computeStoreBurn(log){const by={};log.forEach(x=>{const k=x.item+'|'+x.store;(by[k]=by[k]||[]).push(x)});const res={};
+// Per store burn from the Enhancer Store Log. Optional sales(store,fromT,toT) returns Daily Log net sales for the days after fromT up to and including toT
+// (count date to count date), or null when any of those days has no sales entered. It adds usage intensity over the exact same clean cycles.
+function computeStoreBurn(log,sales){const by={};log.forEach(x=>{const k=x.item+'|'+x.store;(by[k]=by[k]||[]).push(x)});const res={};
  Object.keys(by).forEach(k=>{const m=new Map();by[k].forEach(x=>m.set(x.t,x));const a=[...m.values()].sort((p,q)=>p.t-q.t),cyc=[];let skipped=0;/* a later row for the same date replaces an earlier one */
-  for(let i=1;i<a.length;i++){const p=a[i-1],c=a[i];if(c.recv==null){skipped++;continue}const days=(c.t-p.t)/864e5;if(days<=0)continue;if(days>28){skipped++;continue}const used=p.stock+c.recv-c.stock;if(used<0){skipped++;continue}cyc.push(used/days*7)}
-  const use=cyc.slice(-3),burn=use.length?use.reduce((s,v)=>s+v,0)/use.length:null,[item,store]=k.split('|');
-  (res[item]=res[item]||{})[store]={burn:burn==null?null:r2(burn),cycles:use.length,skipped,last:a[a.length-1].t}});return res}
+  for(let i=1;i<a.length;i++){const p=a[i-1],c=a[i];if(c.recv==null){skipped++;continue}const days=(c.t-p.t)/864e5;if(days<=0)continue;if(days>28){skipped++;continue}const used=p.stock+c.recv-c.stock;if(used<0){skipped++;continue}cyc.push({rate:used/days*7,used:used,from:p.t,to:c.t})}
+  const use=cyc.slice(-3),burn=use.length?use.reduce((s,v)=>s+v.rate,0)/use.length:null,[item,store]=k.split('|'),o={burn:burn==null?null:r2(burn),cycles:use.length,skipped,last:a[a.length-1].t};
+  // intensity: tubs used over the same clean cycles divided by net sales over the same dates, per $1,000. Pooled across the cycles. Never estimated: any missing sales day means no intensity.
+  o.inten=null;o.used=null;o.sales=null;o.from=use.length?use[0].from:null;o.to=use.length?use[use.length-1].to:null;
+  if(use.length&&typeof sales==='function'){let u=0,sv=0,ok=true;use.forEach(c=>{const v=sales(store,c.from,c.to);if(v==null||!(v>=0))ok=false;else{u+=c.used;sv+=v}});
+   if(ok&&sv>0){o.used=r2(u);o.sales=Math.round(sv*100)/100;o.inten=Math.round(u/sv*1000*1000)/1000}}
+  (res[item]=res[item]||{})[store]=o});return res}
+// Daily Log net sales for a store over (fromT, toT]. Grids are parseGrid output, year is the year the day by month grid holds.
+function salesLookup(grids,year){return(store,fromT,toT)=>{const g=grids&&grids[store];if(!g||!g.days)return null;let t=fromT+864e5,sum=0;if(!(toT>fromT))return null;
+ while(t<=toT){const d=new Date(t);if(d.getUTCFullYear()!==year)return null;const row=g.days[d.getUTCDate()],v=row?row[d.getUTCMonth()]:null;if(v==null)return null;sum+=v;t+=864e5}return sum}}
+// Company intensity per item (total use over total sales across the stores that have clean cycles) and the worth a look flag:
+// a store is flagged when its intensity is at least 1.5 times the lowest store on the same item. Counts are in quarter tubs, so only stores that used at least 1 tub over their cycles are compared,
+// which keeps a single quarter tub of count rounding from reading as a difference. Needs two such stores and a lowest above zero.
+function enhIntensity(burn){const out={};Object.keys(burn||{}).forEach(item=>{const st=burn[item],have=Object.keys(st).filter(s=>st[s].inten!=null);if(!have.length)return;
+ const u=have.reduce((p,s)=>p+st[s].used,0),sv=have.reduce((p,s)=>p+st[s].sales,0),low=Math.min.apply(null,have.map(s=>st[s].inten)),flags={};
+ const el=have.filter(s=>st[s].used>=1),elow=el.length?Math.min.apply(null,el.map(s=>st[s].inten)):0;
+ if(el.length>=2&&elow>0)el.forEach(s=>{const r=st[s].inten/elow;if(r>=1.5)flags[s]=Math.round(r*100)/100});
+ out[item]={co:sv>0?Math.round(u/sv*1000*1000)/1000:null,used:Math.round(u*100)/100,sales:Math.round(sv*100)/100,stores:have,low:elow,flags:flags}});return out}
 
 // Hourly sales (Sysco and Daily Numbers workbook, tab Hourly Sales: Date, Store, Hour, Net Sales, Checks).
 // Only hours with activity have rows, so a missing hour is zero. Checks are real for Massillon only, never read a blank as zero.
@@ -96,4 +113,21 @@ function computeHourly(P){const res={};
    return{wd:w,n:xs.length,avg:avg,tot:t,peak:pk,share:t>0?avg[pk]/t:null}});
   res[st]={lo:lo,hi:hi,days:list,dow:dow}});
  return res}
-if(typeof module!=='undefined')module.exports={parseHourly,computeHourly,parseEnhStoreLog,computeStoreBurn,parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};
+
+// Burn Rate tabs (Enhancer and Cookie workbooks), maintained by Pacer from the store counts. Updates on the count cycle, not real time.
+// Columns: Store, Item, Last Count, Stock On Hand, Used Last Interval, Burn per week, Company Burn per week, Weeks of Cover, Projected Run-Out, Notes.
+// A blank burn, cover or run out is never computable yet and never zero. Stock On Hand of 0 is a real zero.
+function parseBurn(rows){const items=[],ds=v=>{const t=String(v==null?'':v).trim();return /^\d{4}-\d{2}-\d{2}$/.test(t)?t:null},nz=v=>{const t=String(v==null?'':v).trim();return t===''?null:num(t)};
+ (rows||[]).forEach((r,i)=>{if(!r)return;const st=String(r[0]==null?'':r[0]).trim(),it=String(r[1]==null?'':r[1]).trim();if(!st||!it||(i===0&&/^store$/i.test(st)))return;
+  items.push({store:st,item:it,count:ds(r[2]),stock:nz(r[3]),used:nz(r[4]),burn:nz(r[5]),co:nz(r[6]),cover:nz(r[7]),runout:ds(r[8]),note:String(r[9]==null?'':r[9]).trim()})});
+ return items}
+function computeBurn(enh,cookie){const ST=['Ashland','Wadsworth','Massillon'],kinds={enh:enh||[],cookie:cookie||[]},out={kinds:{},attention:[],pending:0,nocount:0},rank={out:0,under2:1,ok:1,pending:2,nocount:3};
+ Object.keys(kinds).forEach(k=>{const by={};ST.forEach(s=>by[s]=[]);kinds[k].forEach((x,i)=>{if(by[x.store])by[x.store].push(Object.assign({ord:i},x))});const o={};
+  ST.forEach(s=>{const rows=by[s].map(r=>Object.assign({},r,{st:r.stock===0?'out':r.stock==null?'nocount':r.cover!=null?(r.cover<2?'under2':'ok'):'pending'}));
+   rows.sort((a,b)=>rank[a.st]-rank[b.st]||((a.st==='under2'||a.st==='ok')?a.cover-b.cover:0)||a.ord-b.ord);
+   const dates=rows.map(r=>r.count).filter(Boolean).sort();o[s]={rows:rows,first:dates.length?dates[0]:null,last:dates.length?dates[dates.length-1]:null};
+   rows.forEach(r=>{if(r.st==='out'||r.st==='under2')out.attention.push({kind:k,store:s,item:r.item,st:r.st,cover:r.cover,runout:r.runout,count:r.count,co:r.co});if(r.st==='pending')out.pending++;if(r.st==='nocount')out.nocount++})});
+  out.kinds[k]=o});
+ out.attention.sort((a,b)=>(a.st==='out'?0:1)-(b.st==='out'?0:1)||(a.cover==null?99:a.cover)-(b.cover==null?99:b.cover));
+ return out}
+if(typeof module!=='undefined')module.exports={salesLookup,enhIntensity,parseBurn,computeBurn,parseHourly,computeHourly,parseEnhStoreLog,computeStoreBurn,parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};
