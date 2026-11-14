@@ -29,13 +29,13 @@ T.Staffing=()=>{const R0=R.roster,css=`<style>
 :root{--bg:#fff;--card:#fff;--ink:#000;--ink2:#000;--mut:#333;--line:#888;--warn:#000;--crit:#000;--pos:#000}
 html,body{background:#fff!important;color:#000!important}main{padding:0!important;max-width:none!important}
 .stgrid{display:block}.stgrid .card{box-shadow:none!important;border:0!important;margin:0!important;break-inside:avoid}
-.stp .card{padding:11mm 12mm 0!important}.stp .card+.card{break-before:page}
+.stp .card{padding:11mm 10mm 0!important}.stp .card+.card{break-before:page}
 .stp h3{display:flex;justify-content:space-between;align-items:baseline;font-size:20px;border-bottom:2px solid #000;padding-bottom:4px;margin:0 0 4px!important}.stp h3 .prt{display:inline;font-size:12px;font-weight:500;margin:0}
 .pl{display:block;font-size:11px;margin:0 0 6px}
 .stp .stt{table-layout:fixed;width:100%;font-size:12pt}.stp .stt th{font-size:10pt;opacity:1;padding:3px 4px;border-bottom:1px solid #000}
-.stp .stt th:nth-child(1){width:27%}.stp .stt th:nth-child(2){width:9%}.stp .stt th:nth-child(3){width:11%}.stp .stt th:nth-child(4){width:8%}.stp .stt th:nth-child(5){width:14%}
-.stp .stt td{height:10.5mm;border-top:1px solid #888;padding:2px 6px 2px 4px;font-size:11pt;white-space:nowrap}.stp .stt td.nm{width:auto;max-width:none;overflow:hidden}.stp .stt .n1{font-size:11.5pt;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stp .stt .n2{display:none}.stp .stt .stg{font-size:10pt;padding:1px 7px;min-width:0}
-.stp .stt .rate{text-align:left;font-size:12pt}.stp .stt .rt{text-align:left}
+.stp .stt th:nth-child(1){width:24%}.stp .stt th:nth-child(2){width:10.5%}.stp .stt th:nth-child(3){width:12%}.stp .stt th:nth-child(4){width:9.5%}.stp .stt th:nth-child(5){width:14%}
+.stp .stt td{height:10.5mm;border-top:1px solid #888;padding:2px 6px 2px 4px;font-size:11pt;white-space:nowrap}.stp .stt td.nm{width:auto;max-width:none;overflow:hidden}.stp .stt .n1{font-size:11pt;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stp .stt .n2{display:none}.stp .stt .stg{font-size:9.5pt;padding:1px 6px;min-width:0}
+.stp .stt .rate{text-align:left;font-size:11.5pt}.stp .stt .rt{text-align:left}
 .pc,.pn{display:table-cell}.stp .pn{border-left:1px solid #888}
 .stsh{break-before:page;padding:11mm 12mm 0}.stsh .stgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.stsh .pn,.stsh .pc{display:none}
 .stg{background:none!important;color:#000!important;border:1px solid #000;font-weight:700}.stg.r{border-width:2px;font-weight:800}.stg.r::before{content:"▲▲ "}.stg.y::before{content:"▲ "}
