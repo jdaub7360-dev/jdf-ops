@@ -65,6 +65,12 @@ try:
         check('staffing says Hired when no raise is recorded and shows time here',pg.evaluate("[...document.querySelectorAll('.stt .n2')].some(e=>e.textContent.includes('Hired')&&e.textContent.includes('here'))"))
         check('staffing store lists are sorted by seniority, longest here first',pg.evaluate("(()=>{const c=[...document.querySelectorAll('.stgrid .card')].find(c=>c.innerText.startsWith('Wadsworth')&&c.querySelector('.n1'));const n=[...c.querySelectorAll('.n1')].map(e=>e.textContent),i=q=>n.findIndex(x=>x.startsWith(q));return i('Sample Person')>=0&&i('Sample Person')<i('Maximiliana')})()"))
         check('staffing marks key holders with K and leaves others unmarked',pg.evaluate("(()=>{const r=n=>[...document.querySelectorAll('.stgrid .n1')].find(e=>e.textContent.startsWith(n));return !!r('Sample Person').querySelector('.kw')&&!r('Test Employee').querySelector('.kw')})()"))
+        check('staffing has a print button on screen and hides the notes column',pg.evaluate("!!document.querySelector('.stpr')&&getComputedStyle(document.querySelector('.stp .pn')).display==='none'"))
+        pg.emulate_media(media='print')
+        check('print view hides header, tabs, tiles and the Ask button, and shows a notes column',pg.evaluate("['header','nav','#askfab','.stk','.stpr'].every(q=>getComputedStyle(document.querySelector(q)).display==='none')&&getComputedStyle(document.querySelector('.stp .pn')).display==='table-cell'&&getComputedStyle(document.querySelector('.prt')).display!=='none'"))
+        pdf=pg.pdf(format='Letter');open('/tmp/staffing_test.pdf','wb').write(pdf)
+        check('staffing prints to a PDF with one page per store plus shirt sizes',pdf[:4]==b'%PDF' and pdf.count(b'/Type /Page\n')+pdf.count(b'/Type /Page ')+pdf.count(b'/Type/Page\n')>=4)
+        pg.emulate_media(media='screen')
         SC="document.querySelector('.stgrid').innerText"
         pg.evaluate("document.querySelector('[data-stf=red]').click()");pg.wait_for_timeout(300);t=pg.inner_text('#main');g=pg.evaluate(SC)
         check('red tile shows only red people in the store cards','Old Raise' in g and 'Test Employee' not in g and 'Showing only people at 12 months or more' in t and pg.evaluate("document.querySelector('[data-stf=red]').getAttribute('aria-pressed')==='true'"))
