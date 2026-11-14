@@ -63,7 +63,7 @@ try:
         pg.click('#nav button[data-t="Staffing"]');pg.wait_for_timeout(1200);t=pg.inner_text('#main')
         check('staffing flags red at 12 months and yellow at 6','12+ mo' in t and '6+ mo' in t and 'Needs attention' in t and 'Old Raise' in t)
         check('staffing shows the hourly rate under the last raise date','$14.00/hr' in t and '$13.50/hr' in t)
-        check('staffing lists shirt sizes with counts and names','Shirt sizes' in t and 'Medium' in t and 'Large' in t and 'No size' in t)
+        check('staffing lists shirt sizes by store with employee and size side by side','Shirt sizes' in t and 'Company totals for ordering' in t and 'Medium' in t and 'Large' in t and 'no size' in t and pg.evaluate("[...document.querySelectorAll('.stgrid .card')].some(c=>c.innerText.includes('Test Employee')&&c.innerText.includes('Medium'))"))
         check('staffing says when the hire date is used',('hire date, no raise recorded' in t))
         pg.click('#askcl');pg.click('#nav button[data-t="All data"]');pg.wait_for_timeout(1500)
         pg.click('.dtc[data-g="Roster"]');pg.wait_for_timeout(1500);t=pg.inner_text('#main')
