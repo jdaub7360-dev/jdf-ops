@@ -2,8 +2,8 @@
 // Shirt sizes come from the Notes column. Display only, nothing here feeds labor or any calculation.
 // The Needs attention block is a native details element so it collapses with no script. Its open state is kept in ST and remembered per browser.
 const SZO=['xs','extra small','small','s','medium','m','large','l','xl','extra large','2xl','xxl','3xl'],szk=z=>{const i=SZO.indexOf(String(z).toLowerCase());return i<0?99:i};
-const ST={open:true};try{if(localStorage.getItem('stOpen')==='0')ST.open=false}catch(e){}
-document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.id==='stNeed'){ST.open=d.open;try{localStorage.setItem('stOpen',d.open?'1':'0')}catch(x){}}},true);
+const ST={f:null};
+document.addEventListener('click',e=>{const b=e.target&&e.target.closest&&e.target.closest('[data-stf]');if(!b)return;const f=b.dataset.stf;ST.f=ST.f===f?null:f;if(typeof current!=='undefined'&&current==='Staffing')show('Staffing',true)});
 const KEYIC='<svg class="kic" style="vertical-align:-1px" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="Key holder"><circle cx="8" cy="15" r="4.5"/><path d="M11.5 11.5 21 2M17 6l3 3M14.5 8.5l2.5 2.5"/></svg>';
 const stTen=m=>m<1?'<1 mo':m<24?m+' mo':Math.floor(m/12)+'y '+(m%12)+'m';
 const stLab=m=>m==null?'No date':m<1?'<1 mo':m<24?m+' mo':Math.floor(m/12)+'y '+(m%12)+'m';
@@ -18,7 +18,7 @@ T.Staffing=()=>{const R0=R.roster,css=`<style>
 .stg{display:inline-block;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:650;white-space:nowrap;min-width:46px;text-align:center}
 .stg.r{background:color-mix(in srgb,var(--crit) 15%,transparent);color:var(--crit)}.stg.y{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
 .stg.g{background:color-mix(in srgb,var(--pos,#2a9d5c) 14%,transparent);color:var(--pos,#2a9d5c)}.stg.n{background:var(--line);color:inherit}
-.stk{display:flex;gap:8px;margin:0 0 14px}.stk>div{flex:1;border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--card);min-width:0}
+.stk{display:flex;gap:8px;margin:0 0 6px}.stk>button{flex:1;border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--card);min-width:0;font:inherit;color:inherit;text-align:left;cursor:pointer}.stk>button:hover{border-color:color-mix(in srgb,var(--line) 40%,currentColor)}.stk>button.on{box-shadow:0 0 0 2px currentColor inset}.sthint{font-size:12px;opacity:.7;margin:0 0 14px}
 .stk b{font-size:22px;line-height:1.1;display:block}.stk span{font-size:12px;opacity:.75}.stk .r{border-left:4px solid var(--crit)}.stk .y{border-left:4px solid var(--warn)}.stk .g{border-left:4px solid var(--pos,#2a9d5c)}
 .stt{width:100%;font-size:13px;border-collapse:collapse}.stt td,.stt th{padding:6px 6px;vertical-align:middle;text-align:left;white-space:normal}.stt th{font-size:11.5px;font-weight:600;opacity:.7;white-space:nowrap}
 .stt td{border-top:1px solid var(--line)}.stt .nw{white-space:nowrap}.stt .rt{text-align:right}.stt .rate{font-weight:700;text-align:right;white-space:nowrap}
@@ -26,21 +26,19 @@ T.Staffing=()=>{const R0=R.roster,css=`<style>
 .stgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:12px;align-items:start}.stgrid .card{margin:0;padding:12px 10px 6px}.stgrid .stt td,.stgrid .stt th{padding-left:4px;padding-right:4px}.stgrid h3{margin:0 0 6px}
 .wd{display:none}@media(min-width:720px){.wd{display:table-cell}.nr{display:none}}
 @media(max-width:340px){.stt{font-size:11.5px}.stt td,.stt th{padding-left:3px;padding-right:3px}}
-details.stnd{margin:0 0 6px}details.stnd>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:2px 0 8px}
-details.stnd>summary::-webkit-details-marker{display:none}details.stnd>summary h2{margin:0}
-.stnd .chev{display:inline-block;transition:transform .15s;font-size:12px;opacity:.7}details.stnd[open] .chev{transform:rotate(90deg)}.stnd .hint .a{display:none}details.stnd[open] .hint .a{display:inline}details.stnd[open] .hint .b{display:none}.stnd .hint{font-size:12px;opacity:.65;margin-left:auto}
 </style>`,
  head='<h2>Staffing</h2><p class="sub">Time since each person\'s last pay raise, so raises can stay on a six month rhythm. The colored badge shows how long it has been, yellow at 6 months and red at 12. Each store list is sorted by seniority, longest here first. Under each name is the last raise date, or the hire date when no raise is recorded, then how long they have been here.</p><p class="sub" style="margin-top:-6px"><b>S</b> after a name means seasonal. '+KEYIC+' means key.</p>';
  if(!modLive('roster')||!R0)return css+head+'<div class="card"><span class="tag warn">● Not connected</span> <span class="sub">Staffing reads straight from the Roster tab of the Pulp Employee Roster and Pay sheet and is not kept as a snapshot. This fills in as soon as Google Sheets answers for it.</span></div>';
  if(!R0.total)return css+head+'<div class="card"><p class="sub">The Roster tab has no employee rows yet.</p></div>';
- const all=S.flatMap(s=>R0.stores[s]),need=all.filter(x=>x.level==='red'||x.level==='yellow').sort((a,b)=>b.months-a.months||(b.tenure==null?-1:b.tenure)-(a.tenure==null?-1:a.tenure)||a.name.localeCompare(b.name)),cur=all.filter(x=>x.level==='ok').length,
+ const all=S.flatMap(s=>R0.stores[s]),cur=all.filter(x=>x.level==='ok').length,
  sd2=x=>x.raise?esc(stSd(x.raise)):x.hire?esc(stSd(x.hire))+'<span class="hire">hired</span>':'<span class="src">none</span>',
  sd3=v=>stSd(v).replace(/^0/,'').replace('/0','/'),
  sub=(x,ss)=>(ss?x.store.slice(0,3).toUpperCase()+' · ':'')+(x.raise?'Raised '+sd3(x.raise):x.hire?'Hired '+sd3(x.hire):'No dates')+(x.tenure!=null&&x.tenure>=0?' · '+stTen(x.tenure)+' here':''),
  rt=x=>x.rate!=null?'$'+x.rate.toFixed(2):'<span class="src">none</span>',
- tbl=(xs,ss)=>`<table class="stt"><tr><th>Name</th><th class="rt">Rate/hr</th><th class="rt">Since</th></tr>${xs.map(x=>`<tr><td class="nm"><div class="n1">${esc(x.name)}${x.seasonal?'<sup class="hire" title="Seasonal">S</sup>':''}${x.key?'<span class="kw" title="Key holder"><svg class="kic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="Key holder"><circle cx="8" cy="15" r="4.5"/><path d="M11.5 11.5 21 2M17 6l3 3M14.5 8.5l2.5 2.5"/></svg></span>':''}</div><div class="n2">${esc(sub(x,ss))}</div></td><td class="rate">${rt(x)}</td><td class="rt">${stChip(x)}</td></tr>`).join('')}</table>`,
- chunks=(xs,n)=>{if(xs.length<=6)return[xs];const k=Math.ceil(xs.length/n);return Array.from({length:n},(_,i)=>xs.slice(i*k,(i+1)*k)).filter(c=>c.length)};
- return css+head+`<div class="stk"><div class="r"><b>${R0.red}</b><span>12 months or more</span></div><div class="y"><b>${R0.yellow}</b><span>6 to 12 months</span></div><div class="g"><b>${cur}</b><span>Under 6 months</span></div></div>
- <details class="stnd" id="stNeed"${ST.open?' open':''}><summary><span class="chev">▶</span><h2>Needs attention</h2><span class="stg r">${R0.red} red</span><span class="stg y">${R0.yellow} yellow</span><span class="hint"><span class="a">Tap to collapse</span><span class="b">Tap to show the list</span></span></summary>${need.length?`<div class="stgrid">${chunks(need,3).map(c=>`<div class="card">${tbl(c,true)}</div>`).join('')}</div>`:'<div class="card"><p class="sub">Everyone is under 6 months since their last raise.</p></div>'}</details>
- <h2>By store</h2><div class="stgrid">${S.map(s=>`<div class="card"><h3>${s}</h3>${R0.stores[s].length?tbl(R0.stores[s].slice().sort((a,b)=>(b.tenure==null?-1:b.tenure)-(a.tenure==null?-1:a.tenure)||a.name.localeCompare(b.name)),false):'<p class="sub">No employees listed.</p>'}</div>`).join('')}</div>
+ tbl=(xs,ss)=>`<table class="stt"><tr><th>Name</th><th class="rt">Rate/hr</th><th class="rt">Since</th></tr>${xs.map(x=>`<tr><td class="nm"><div class="n1">${esc(x.name)}${x.seasonal?'<sup class="hire" title="Seasonal">S</sup>':''}${x.key?'<span class="kw" title="Key holder"><svg class="kic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-label="Key holder"><circle cx="8" cy="15" r="4.5"/><path d="M11.5 11.5 21 2M17 6l3 3M14.5 8.5l2.5 2.5"/></svg></span>':''}</div><div class="n2">${esc(sub(x,ss))}</div></td><td class="rate">${rt(x)}</td><td class="rt">${stChip(x)}</td></tr>`).join('')}</table>`;
+ const lv={red:'12 months or more',yellow:'6 to 12 months',ok:'Under 6 months'},fl=ST.f?{red:'red',yellow:'yellow',green:'ok'}[ST.f]:null,
+ tile=(k,c,n,t)=>`<button class="${c}${ST.f===k?' on':''}" data-stf="${k}" aria-pressed="${ST.f===k}"><b>${n}</b><span>${t}</span></button>`,
+ show1=xs=>fl?xs.filter(x=>x.level===fl):xs;
+ return css+head+`<div class="stk">${tile('red','r',R0.red,lv.red)}${tile('yellow','y',R0.yellow,lv.yellow)}${tile('green','g',cur,lv.ok)}</div><p class="sthint">${fl?'Showing only people at '+lv[fl].toLowerCase()+'. Tap the tile again to show everyone.':'Tap a tile to show only those people.'}</p>
+ <h2>By store</h2><div class="stgrid">${S.map(s=>{const xs=show1(R0.stores[s]).slice().sort((a,b)=>(b.tenure==null?-1:b.tenure)-(a.tenure==null?-1:a.tenure)||a.name.localeCompare(b.name));return `<div class="card"><h3>${s}${fl?` <span class="src">${xs.length}</span>`:''}</h3>${xs.length?tbl(xs,false):`<p class="sub">${fl?'No one in this group.':'No employees listed.'}</p>`}</div>`}).join('')}</div>
  ${shirtBlock(R0)}${R0.unknown?`<p class="sub">${R0.unknown} ${R0.unknown===1?'person has':'people have'} no raise or hire date, so no flag.</p>`:''}`};
