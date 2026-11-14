@@ -391,16 +391,16 @@ function enhIntensity(burn){const out={};Object.keys(burn||{}).forEach(item=>{co
 // Ashland and Wadsworth hourly money is item level (POS Sales Mix) and does not tie to the Daily Log, so it is for shape and share only.
 const HOURLY_CHECK_STORES={Massillon:1};
 // Roster: one row per employee. Raise age is whole calendar months from Last Pay Raise Date to today (Hire Date when no raise is recorded).
-// Yellow at 6 months, red at 12. Dates are yyyy-mm-dd, m/d/yyyy also read. Pay rates are never read here.
+// Yellow at 6 months, red at 12. Dates are yyyy-mm-dd, m/d/yyyy also read. Base Hourly Rate is read for display only and Shirt Size is parsed from Notes ("Shirt Size - Large").
 function rdate(v){const t=String(v==null?'':v).trim();let m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);if(m)return{y:+m[1],m:+m[2],d:+m[3]};m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);return m?{y:+m[3],m:+m[1],d:+m[2]}:null}
 function rmonths(a,t){let n=(t.y-a.y)*12+(t.m-a.m);if(t.d<a.d)n--;return n}
 function computeRoster(rows,today){const out={stores:{Ashland:[],Wadsworth:[],Massillon:[]},total:0,yellow:0,red:0,unknown:0};if(!rows||!rows.length)return out;
- const h=(rows[0]||[]).map(x=>String(x==null?'':x).trim().toLowerCase()),ix=n=>h.indexOf(n),iS=ix('store'),iF=ix('first name'),iL=ix('last name'),iH=ix('hire date'),iR=ix('last pay raise date'),iZ=ix('seasonal');
+ const h=(rows[0]||[]).map(x=>String(x==null?'':x).trim().toLowerCase()),ix=n=>h.indexOf(n),iS=ix('store'),iF=ix('first name'),iL=ix('last name'),iH=ix('hire date'),iR=ix('last pay raise date'),iZ=ix('seasonal'),iP=ix('base hourly rate'),iN=ix('notes');
  if(iS<0||iF<0)return out;const t=rdate(today);
  rows.slice(1).forEach(r=>{const st=String(r[iS]||'').trim(),a=out.stores[st];if(!a)return;const name=(String(r[iF]||'').trim()+' '+String(r[iL]==null?'':r[iL]).trim()).trim();if(!name)return;
   const rr=iR>=0?rdate(r[iR]):null,hh=iH>=0?rdate(r[iH]):null,base=rr||hh,months=base&&t?rmonths(base,t):null,
-   level=months==null?null:months>=12?'red':months>=6?'yellow':'ok';
-  a.push({name,store:st,raise:rr?(r[iR]+'').trim():null,hire:hh?(r[iH]+'').trim():null,since:rr?'raise':hh?'hire':null,months,level,seasonal:iZ>=0&&String(r[iZ]||'').trim()!==''});
+   level=months==null?null:months>=12?'red':months>=6?'yellow':'ok',rt=iP>=0?parseFloat(String(r[iP]==null?'':r[iP]).replace(/[$,\s]/g,'')):NaN,sm=iN>=0?/shirt\s*size\s*[-:]?\s*([A-Za-z0-9 ]+)/i.exec(String(r[iN]||'')):null;
+  a.push({name,store:st,raise:rr?(r[iR]+'').trim():null,hire:hh?(r[iH]+'').trim():null,since:rr?'raise':hh?'hire':null,months,level,seasonal:iZ>=0&&String(r[iZ]||'').trim()!=='',rate:isFinite(rt)?rt:null,shirt:sm?sm[1].trim():null});
   out.total++;if(level==='red')out.red++;else if(level==='yellow')out.yellow++;else if(level==null)out.unknown++});
  Object.keys(out.stores).forEach(k=>out.stores[k].sort((a,b)=>(b.months==null?-1:b.months)-(a.months==null?-1:a.months)||a.name.localeCompare(b.name)));return out}
 function parseHourly(rows){const out={Ashland:{},Wadsworth:{},Massillon:{}};
@@ -627,20 +627,23 @@ function stockBody(){
  const st=STK.store,sp=`<div class="bsp" role="tablist">${S.map(s=>`<button class="bsb" role="tab" data-bs="${s}" aria-selected="${s===st}">${s}</button>`).join('')}</div>`;
  return css+lead+top+sp+bTable('enh',B.kinds.enh[st],st)+'<div style="height:12px"></div>'+bTable('cookie',B.kinds.cookie[st],st)}
 
-// Staffing tab: how long since each person's last raise. Yellow at 6 months, red at 12. Dates only, no pay rates on this tab.
-// Pay rates are visible in All data under Roster. Nothing here feeds labor or any calculation.
-const stLab=m=>m==null?'No date':m<1?'Under 1 month':m<24?m+' mo':Math.floor(m/12)+' yr '+(m%12)+' mo';
-const stTag=l=>l==='red'?'<span class="stg r">12+ months</span>':l==='yellow'?'<span class="stg y">6+ months</span>':l==='ok'?'<span class="stg g">Current</span>':'<span class="stg n">No date</span>';
-T.Staffing=()=>{const R0=R.roster,css=`<style>.stg{display:inline-block;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:650;white-space:nowrap}.stg.r{background:color-mix(in srgb,var(--crit) 14%,transparent);color:var(--crit)}.stg.y{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.stg.g{background:color-mix(in srgb,var(--pos,#2a9d5c) 14%,transparent);color:var(--pos,#2a9d5c)}.stg.n{background:var(--line);color:inherit}.stt{font-size:13px}.stt td,.stt th{white-space:nowrap;padding-left:6px;padding-right:6px}.stt .hn{display:block;white-space:normal;max-width:96px;font-size:11.5px}.stt td:first-child{white-space:normal;font-weight:620}</style>`,
- head='<h2>Staffing</h2><p class="sub">Time since each person\'s last pay raise, so raises can stay on a six month rhythm. Yellow at 6 months, red at 12. When no raise date is recorded the hire date is used and it says so. Pay rates are not shown here.</p>';
+// Staffing tab: how long since each person's last raise, with their hourly rate under the date. Yellow at 6 months, red at 12.
+// Shirt sizes come from the Notes column. Display only, nothing here feeds labor or any calculation.
+const SZO=['xs','extra small','small','s','medium','m','large','l','xl','extra large','2xl','xxl','3xl'],szk=z=>{const i=SZO.indexOf(String(z).toLowerCase());return i<0?99:i};
+const shirtBlock=R0=>{const all=S.flatMap(s=>R0.stores[s]),sizes=[...new Set(all.filter(x=>x.shirt).map(x=>x.shirt))].sort((a,b)=>szk(a)-szk(b)||a.localeCompare(b)),none=all.filter(x=>!x.shirt);
+ if(!sizes.length)return '';return `<h2>Shirt sizes</h2><p class="sub">Pulled from the Notes column when it says Shirt Size.</p><div class="card"><table class="stt"><tr><th>Size</th><th>Count</th><th>Who</th></tr>${sizes.map(z=>{const w=all.filter(x=>x.shirt===z);return `<tr><td>${esc(z)}</td><td>${w.length}</td><td style="white-space:normal">${w.map(x=>esc(x.name)+' <span class="src">'+x.store.slice(0,3)+'</span>').join(', ')}</td></tr>`}).join('')}${none.length?`<tr><td>No size</td><td>${none.length}</td><td style="white-space:normal">${none.map(x=>esc(x.name)+' <span class="src">'+x.store.slice(0,3)+'</span>').join(', ')}</td></tr>`:''}</table></div>`};
+const stLab=m=>m==null?'No date':m<1?'<1 mo':m<24?m+' mo':Math.floor(m/12)+'y '+(m%12)+'m';
+const stTag=l=>l==='red'?'<span class="stg r">12+ mo</span>':l==='yellow'?'<span class="stg y">6+ mo</span>':l==='ok'?'<span class="stg g">Current</span>':'<span class="stg n">No date</span>';
+T.Staffing=()=>{const R0=R.roster,css=`<style>.stg{display:inline-block;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:650;white-space:nowrap}.stg.r{background:color-mix(in srgb,var(--crit) 14%,transparent);color:var(--crit)}.stg.y{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.stg.g{background:color-mix(in srgb,var(--pos,#2a9d5c) 14%,transparent);color:var(--pos,#2a9d5c)}.stg.n{background:var(--line);color:inherit}.stt{font-size:13px}.stt{width:100%}.stt td,.stt th{white-space:normal;padding-left:5px;padding-right:5px;vertical-align:top}.stt td:nth-child(3),.stt th:nth-child(3){text-align:right;white-space:nowrap}.stg{white-space:nowrap}.stt .hn{display:block;font-size:11.5px}.stt td:first-child{font-weight:620}</style>`,
+ head='<h2>Staffing</h2><p class="sub">Time since each person\'s last pay raise, so raises can stay on a six month rhythm. Yellow at 6 months, red at 12. When no raise date is recorded the hire date is used and it says so. The hourly pay rate is shown under each last raise date.</p>';
  if(!modLive('roster')||!R0)return css+head+'<div class="card"><span class="tag warn">● Not connected</span> <span class="sub">Staffing reads straight from the Roster tab of the Pulp Employee Roster and Pay sheet and is not kept as a snapshot. This fills in as soon as Google Sheets answers for it.</span></div>';
  const all=S.flatMap(s=>R0.stores[s]),need=all.filter(x=>x.level==='red'||x.level==='yellow').sort((a,b)=>b.months-a.months||a.name.localeCompare(b.name)),
- row=(x,st)=>`<tr><td>${esc(x.name)}${x.seasonal?' <span class="src">seasonal</span>':''}${st?`<br><span class="src">${x.store}</span>`:''}</td><td>${x.raise?esc(x.raise):x.hire?esc(x.hire)+'<span class="src hn">hire date, no raise recorded</span>':'<span class="src">none</span>'}</td><td>${stLab(x.months)}</td><td>${stTag(x.level)}</td></tr>`,
+ row=(x,st)=>`<tr><td>${esc(x.name)}${x.seasonal?' <span class="src">seasonal</span>':''}${st?`<br><span class="src">${x.store}</span>`:''}</td><td>${(x.raise?'<span style="white-space:nowrap">'+esc(x.raise)+'</span>':x.hire?'<span style="white-space:nowrap">'+esc(x.hire)+'</span>'+'<span class="src hn">hire date, no raise recorded</span>':'<span class="src">none</span>')+(x.rate!=null?'<br><span class="src" style="white-space:nowrap">$'+x.rate.toFixed(2)+'/hr</span>':'')}</td><td>${stLab(x.months)}</td><td>${stTag(x.level)}</td></tr>`,
  tbl=(xs,st)=>`<table class="stt"><tr><th>Name</th><th>${st?'Last raise':'Last raise'}</th><th>Since</th><th>Status</th></tr>${xs.map(x=>row(x,st)).join('')}</table>`;
  if(!R0.total)return css+head+'<div class="card"><p class="sub">The Roster tab has no employee rows yet.</p></div>';
  return css+head+`<div style="display:flex;gap:10px;margin-bottom:10px"><div class="card" style="flex:1;margin:0"><h3 style="margin:0">${R0.red}</h3><p class="sub" style="margin:2px 0 0">12 months or more</p></div><div class="card" style="flex:1;margin:0"><h3 style="margin:0">${R0.yellow}</h3><p class="sub" style="margin:2px 0 0">6 to 12 months</p></div></div>
- <h2>Needs attention</h2>${need.length?`<div class="card tw">${tbl(need,true)}</div>`:'<div class="card"><p class="sub">Everyone is under 6 months since their last raise.</p></div>'}
- <h2>By store</h2><div class="grid2">${S.map(s=>`<div class="card tw"><h3>${s}</h3>${R0.stores[s].length?tbl(R0.stores[s],false):'<p class="sub">No employees listed.</p>'}</div>`).join('')}</div>${R0.unknown?`<p class="sub">${R0.unknown} ${R0.unknown===1?'person has':'people have'} no raise or hire date, so no flag.</p>`:''}`};
+ <h2>Needs attention</h2>${need.length?`<div class="card">${tbl(need,true)}</div>`:'<div class="card"><p class="sub">Everyone is under 6 months since their last raise.</p></div>'}
+ <h2>By store</h2><div>${S.map(s=>`<div class="card"><h3>${s}</h3>${R0.stores[s].length?tbl(R0.stores[s],false):'<p class="sub">No employees listed.</p>'}</div>`).join('')}</div>${shirtBlock(R0)}${R0.unknown?`<p class="sub">${R0.unknown} ${R0.unknown===1?'person has':'people have'} no raise or hire date, so no flag.</p>`:''}`};
 
 const DT={fit:true,color:true,src:'',q:'',sort:null,raw:{},unsub:null,key:'',at:{}};
 const esc=x=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);

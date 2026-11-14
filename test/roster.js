@@ -10,4 +10,6 @@ assert.strictEqual(by('E Five').since,'hire');// no raise recorded, hire date us
 assert.strictEqual(by('F Six').level,null);// no dates, no flag
 assert.strictEqual(r.total,6);assert.strictEqual(r.red,1);assert.strictEqual(r.yellow,2);assert.strictEqual(r.unknown,1);
 assert.deepStrictEqual(E.computeRoster([],'2026-11-13').total,0);
+const q=E.computeRoster([H,["Ashland","A","B","X","$13.50","Shirt Size - Large","2024-01-01",""],["Ashland","C","D","X","","allergic to nuts","2024-01-01",""]],'2026-11-13').stores.Ashland;
+assert.strictEqual(q[0].rate,13.5);assert.strictEqual(q[0].shirt,'Large');assert.strictEqual(q[1].rate,null);assert.strictEqual(q[1].shirt,null);
 console.log('roster ok');
