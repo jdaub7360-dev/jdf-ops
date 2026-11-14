@@ -53,6 +53,25 @@ th{color:var(--mut);font-size:12px;font-weight:600}td,th{padding:9px 8px}
 button:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--info);outline-offset:2px}
 .foot{line-height:1.5;max-width:68ch}
 @media(max-width:520px){.logo svg{height:36px}header{gap:12px}header h1{font-size:17px}.wrap{padding:10px 14px 110px}h2{font-size:19px;margin-top:26px}}
+/* brand pass: look only, no behavior */
+header{position:relative;overflow:hidden;align-items:center;gap:18px;padding:18px 20px 21px;margin:2px 0 4px;border:1px solid var(--line);border-radius:20px;box-shadow:0 1px 2px #0000000d,0 10px 30px -18px #00000040;background:radial-gradient(420px 170px at 100% 0%,color-mix(in srgb,var(--M) 17%,transparent),transparent 72%),radial-gradient(380px 170px at 0% 100%,color-mix(in srgb,var(--g) 15%,transparent),transparent 72%),var(--card)}
+header::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:linear-gradient(90deg,var(--A) 0 33.34%,var(--W) 33.34% 66.67%,var(--M) 66.67% 100%);opacity:.9}
+.logo{padding:8px 13px;border-radius:15px;border:1px solid #0000000f;box-shadow:0 2px 4px #0000000f,0 10px 22px -12px #00000050}.logo svg{height:54px}
+header h1{font-size:26px;font-weight:780;letter-spacing:-.025em;line-height:1.15}
+header p{color:var(--ink2)}
+.dot2.ok{box-shadow:0 0 0 0 color-mix(in srgb,var(--g) 55%,transparent);animation:jdfpulse 2.6s ease-out infinite}
+@keyframes jdfpulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--g) 55%,transparent)}70%,100%{box-shadow:0 0 0 8px transparent}}
+@media(prefers-reduced-motion:reduce){.dot2.ok{animation:none}}
+nav{border-bottom:0;gap:6px;margin:10px 0 14px;padding:8px 2px}
+nav button{border:1px solid transparent;border-radius:999px;padding:8px 15px;font-size:14.5px;transition:background .15s,color .15s,border-color .15s}
+nav button:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+nav button[aria-selected=true]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:650}
+main>h2,main>style+h2{display:flex;align-items:center;gap:10px}
+main>h2::before,main>style+h2::before{content:'';flex:none;width:5px;height:.95em;border-radius:3px;background:linear-gradient(var(--g),var(--M))}
+.kpi,.card{border-radius:16px}.kpi .v{font-size:28px;font-weight:760;letter-spacing:-.03em}
+.sc1,.kpi{transition:transform .18s ease,box-shadow .18s ease}
+@media(hover:hover){.sc1:hover,.kpi:hover{transform:translateY(-2px);box-shadow:0 12px 26px -14px #00000050}}
+@media(max-width:520px){header{padding:14px 14px 17px;gap:6px 12px;border-radius:18px}.logo{padding:5px 9px;border-radius:12px}.logo svg{height:36px}header>div{display:contents}header>div>*{flex:1 1 100%}header h1{font-size:21px;flex:1 1 0;min-width:0}nav button{padding:8px 13px}}
 </style></head><body><div class="wrap">
 <header><div class="logo" aria-label="The JDF Group"><!--LOGO--></div><div><h1>Operations dashboard</h1><p>Pulp Juice &amp; Smoothie Bar · Ashland, Wadsworth, Massillon · Snapshot through Mon Nov 9, 2026</p></div></header>
 <nav role="tablist" id="nav"></nav><main id="main"></main>
