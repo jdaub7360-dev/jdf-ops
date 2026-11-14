@@ -390,6 +390,19 @@ function enhIntensity(burn){const out={};Object.keys(burn||{}).forEach(item=>{co
 // Only hours with activity have rows, so a missing hour is zero. Checks are real for Massillon only, never read a blank as zero.
 // Ashland and Wadsworth hourly money is item level (POS Sales Mix) and does not tie to the Daily Log, so it is for shape and share only.
 const HOURLY_CHECK_STORES={Massillon:1};
+// Roster: one row per employee. Raise age is whole calendar months from Last Pay Raise Date to today (Hire Date when no raise is recorded).
+// Yellow at 6 months, red at 12. Dates are yyyy-mm-dd, m/d/yyyy also read. Pay rates are never read here.
+function rdate(v){const t=String(v==null?'':v).trim();let m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);if(m)return{y:+m[1],m:+m[2],d:+m[3]};m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);return m?{y:+m[3],m:+m[1],d:+m[2]}:null}
+function rmonths(a,t){let n=(t.y-a.y)*12+(t.m-a.m);if(t.d<a.d)n--;return n}
+function computeRoster(rows,today){const out={stores:{Ashland:[],Wadsworth:[],Massillon:[]},total:0,yellow:0,red:0,unknown:0};if(!rows||!rows.length)return out;
+ const h=(rows[0]||[]).map(x=>String(x==null?'':x).trim().toLowerCase()),ix=n=>h.indexOf(n),iS=ix('store'),iF=ix('first name'),iL=ix('last name'),iH=ix('hire date'),iR=ix('last pay raise date'),iZ=ix('seasonal');
+ if(iS<0||iF<0)return out;const t=rdate(today);
+ rows.slice(1).forEach(r=>{const st=String(r[iS]||'').trim(),a=out.stores[st];if(!a)return;const name=(String(r[iF]||'').trim()+' '+String(r[iL]==null?'':r[iL]).trim()).trim();if(!name)return;
+  const rr=iR>=0?rdate(r[iR]):null,hh=iH>=0?rdate(r[iH]):null,base=rr||hh,months=base&&t?rmonths(base,t):null,
+   level=months==null?null:months>=12?'red':months>=6?'yellow':'ok';
+  a.push({name,store:st,raise:rr?(r[iR]+'').trim():null,hire:hh?(r[iH]+'').trim():null,since:rr?'raise':hh?'hire':null,months,level,seasonal:iZ>=0&&String(r[iZ]||'').trim()!==''});
+  out.total++;if(level==='red')out.red++;else if(level==='yellow')out.yellow++;else if(level==null)out.unknown++});
+ Object.keys(out.stores).forEach(k=>out.stores[k].sort((a,b)=>(b.months==null?-1:b.months)-(a.months==null?-1:a.months)||a.name.localeCompare(b.name)));return out}
 function parseHourly(rows){const out={Ashland:{},Wadsworth:{},Massillon:{}};
  (rows||[]).forEach(r=>{if(!r)return;const d=String(r[0]==null?'':r[0]).trim(),st=String(r[1]==null?'':r[1]).trim();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!out[st])return;
@@ -614,6 +627,21 @@ function stockBody(){
  const st=STK.store,sp=`<div class="bsp" role="tablist">${S.map(s=>`<button class="bsb" role="tab" data-bs="${s}" aria-selected="${s===st}">${s}</button>`).join('')}</div>`;
  return css+lead+top+sp+bTable('enh',B.kinds.enh[st],st)+'<div style="height:12px"></div>'+bTable('cookie',B.kinds.cookie[st],st)}
 
+// Staffing tab: how long since each person's last raise. Yellow at 6 months, red at 12. Dates only, no pay rates on this tab.
+// Pay rates are visible in All data under Roster. Nothing here feeds labor or any calculation.
+const stLab=m=>m==null?'No date':m<1?'Under 1 month':m<24?m+' mo':Math.floor(m/12)+' yr '+(m%12)+' mo';
+const stTag=l=>l==='red'?'<span class="stg r">12+ months</span>':l==='yellow'?'<span class="stg y">6+ months</span>':l==='ok'?'<span class="stg g">Current</span>':'<span class="stg n">No date</span>';
+T.Staffing=()=>{const R0=R.roster,css=`<style>.stg{display:inline-block;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:650;white-space:nowrap}.stg.r{background:color-mix(in srgb,var(--crit) 14%,transparent);color:var(--crit)}.stg.y{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}.stg.g{background:color-mix(in srgb,var(--pos,#2a9d5c) 14%,transparent);color:var(--pos,#2a9d5c)}.stg.n{background:var(--line);color:inherit}.stt{font-size:13px}.stt td,.stt th{white-space:nowrap;padding-left:6px;padding-right:6px}.stt .hn{display:block;white-space:normal;max-width:96px;font-size:11.5px}.stt td:first-child{white-space:normal;font-weight:620}</style>`,
+ head='<h2>Staffing</h2><p class="sub">Time since each person\'s last pay raise, so raises can stay on a six month rhythm. Yellow at 6 months, red at 12. When no raise date is recorded the hire date is used and it says so. Pay rates are not shown here.</p>';
+ if(!modLive('roster')||!R0)return css+head+'<div class="card"><span class="tag warn">● Not connected</span> <span class="sub">Staffing reads straight from the Roster tab of the Pulp Employee Roster and Pay sheet and is not kept as a snapshot. This fills in as soon as Google Sheets answers for it.</span></div>';
+ const all=S.flatMap(s=>R0.stores[s]),need=all.filter(x=>x.level==='red'||x.level==='yellow').sort((a,b)=>b.months-a.months||a.name.localeCompare(b.name)),
+ row=(x,st)=>`<tr><td>${esc(x.name)}${x.seasonal?' <span class="src">seasonal</span>':''}${st?`<br><span class="src">${x.store}</span>`:''}</td><td>${x.raise?esc(x.raise):x.hire?esc(x.hire)+'<span class="src hn">hire date, no raise recorded</span>':'<span class="src">none</span>'}</td><td>${stLab(x.months)}</td><td>${stTag(x.level)}</td></tr>`,
+ tbl=(xs,st)=>`<table class="stt"><tr><th>Name</th><th>${st?'Last raise':'Last raise'}</th><th>Since</th><th>Status</th></tr>${xs.map(x=>row(x,st)).join('')}</table>`;
+ if(!R0.total)return css+head+'<div class="card"><p class="sub">The Roster tab has no employee rows yet.</p></div>';
+ return css+head+`<div style="display:flex;gap:10px;margin-bottom:10px"><div class="card" style="flex:1;margin:0"><h3 style="margin:0">${R0.red}</h3><p class="sub" style="margin:2px 0 0">12 months or more</p></div><div class="card" style="flex:1;margin:0"><h3 style="margin:0">${R0.yellow}</h3><p class="sub" style="margin:2px 0 0">6 to 12 months</p></div></div>
+ <h2>Needs attention</h2>${need.length?`<div class="card tw">${tbl(need,true)}</div>`:'<div class="card"><p class="sub">Everyone is under 6 months since their last raise.</p></div>'}
+ <h2>By store</h2><div class="grid2">${S.map(s=>`<div class="card tw"><h3>${s}</h3>${R0.stores[s].length?tbl(R0.stores[s],false):'<p class="sub">No employees listed.</p>'}</div>`).join('')}</div>${R0.unknown?`<p class="sub">${R0.unknown} ${R0.unknown===1?'person has':'people have'} no raise or hire date, so no flag.</p>`:''}`};
+
 const DT={fit:true,color:true,src:'',q:'',sort:null,raw:{},unsub:null,key:'',at:{}};
 const esc=x=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 const DESC={'Roster':'Employees by store with base hourly rate, hire date and last raise date, read live from the Pulp Employee Roster and Pay sheet. Shown here only, never used in labor or any calculation.','Daily sales':'Net sales by day, one column per month. Rows below the days hold the monthly totals.','Daily labor':'Labor percent by day, one column per month, as entered in the sheet.','Sysco':'Every Sysco order logged by store, with dates and amounts.','Tips':'Tip counts. Summary lists each 14 day pay period, the period tabs list each day.','Enhancers':'Enhancer inventory, weekly usage and order drafts. Totals is current stock, Usage is the weekly counts.','PAR counts':'The live on hand counts the stores enter. The sheet has no PAR levels.','Cookies':'Cookie stock by store and the order history.'};
@@ -824,10 +852,10 @@ function askOpen(){askBuild();$('#askp').classList.add('on');$('#askfab').style.
 function askClose(){const p=$('#askp');if(p)p.classList.remove('on');const f=$('#askfab');if(f)f.style.display=''}
 (function(){const st=document.createElement('style');st.textContent=ASKCSS;document.head.appendChild(st);const b=document.createElement('button');b.id='askfab';b.type='button';b.textContent='Ask';b.setAttribute('aria-label','Ask a question about the business');b.onclick=askOpen;document.body.appendChild(b)})();
 
-const tabs=['Overview','Sales','Hourly','Labor','Tips','Supply','Orders','All data','Data health'];
+const tabs=['Overview','Sales','Hourly','Labor','Tips','Staffing','Supply','Orders','All data','Data health'];
 const GS='Google Sheets',GD='Google Drive',FID={roster:'1xjQEsUhP2Y-R_Xl0S5S3NCg_jF6KN5-d6yoqA4HJsek',sales:'1WTbr7-glp5qvUaic9Rmlg8BsB1XbP1FbqHffaIDMf6g',labor:'1j9Aep9pRCy-Os80DMD3zWnKCOpV3YVeakJuol9EqOE4',sysco:'18lcS1wZobeEVDsP4sumjXqhn298XzpsGuhXShoAKcxM',tips:'1yXfOsp9E6Qaiwq02LfobMQRZqEGBzktxJM_zHQmzFjc',enh:'1PBd6rouiKWmcOYpfXfsGhzpYqXcL_d5120e2UN19dAA',cookie:'1xqF-jZuhJUeitAZFKvudqB_2SqIFDO7vBU4KgBHRfg8',par:{Ashland:'1K2aGrtoBq_x2dTrzw3isz9fZ2ygDU16zGLZ2Y2jrDts',Wadsworth:'10j2P0GsB3f-gUgjSYHzkjo4op2Ui9LZHHJhT8hULOh4',Massillon:'1SGH3hq1KgAItnEksO7AiH0GrkYKVFUbtcH-9zrvYqPg'}};
-const MODS={core:[...S.map(s=>'sales:'+s),...S.map(s=>'labor:'+s)],sysco:['sysco'],tips:['tips:summary'],enh:['enh:totals','enh:usage','enh:order','enh:gnc'],par:S.map(s=>'par:'+s),hourly:['hourly'],burn:['burn:enh','burn:cookie'],cookie:['cookie:totals','cookie:orders']};
-const MODNAME={core:'Sales and labor',sysco:'Sysco',tips:'Tips',enh:'Enhancers',par:'PAR counts',hourly:'Hourly sales',burn:'Stock burn',cookie:'Cookies'};
+const MODS={core:[...S.map(s=>'sales:'+s),...S.map(s=>'labor:'+s)],sysco:['sysco'],tips:['tips:summary'],enh:['enh:totals','enh:usage','enh:order','enh:gnc'],par:S.map(s=>'par:'+s),hourly:['hourly'],burn:['burn:enh','burn:cookie'],roster:['roster'],cookie:['cookie:totals','cookie:orders']};
+const MODNAME={core:'Sales and labor',sysco:'Sysco',tips:'Tips',enh:'Enhancers',par:'PAR counts',hourly:'Hourly sales',burn:'Stock burn',roster:'Staffing',cookie:'Cookies'};
 const gv=(id,range,tool)=>({srv:GS,tool:'get_values',input:{spreadsheetId:id,range}});
 const DEFS=[];
 S.forEach(s=>{DEFS.push({k:'sales:'+s,...gv(FID.sales,`${s}!A3:N43`),every:30000,parse:r=>parseGrid(r),ok:g=>Object.keys(g.days).length>=28&&!!g.years[CFG.year-1]});
@@ -837,6 +865,7 @@ S.forEach(s=>{DEFS.push({k:'sales:'+s,...gv(FID.sales,`${s}!A3:N43`),every:30000
 DEFS.push({k:'sysco',...gv(FID.sysco,"'Sysco Orders'!A3:I400"),every:60000,parse:parseSysco,ok:o=>S.some(s=>o[s].length)});
 DEFS.push({k:'burn:enh',...gv(FID.enh,"'Burn Rate'!A1:J200"),every:300000,parse:parseBurn,ok:r=>r.length>0});
 DEFS.push({k:'burn:cookie',...gv(FID.cookie,"'Burn Rate'!A1:J200"),every:300000,parse:parseBurn,ok:r=>r.length>0});
+DEFS.push({k:'roster',...gv(FID.roster,'Roster!A1:Z400'),every:300000,parse:r=>r,ok:r=>r.length>1});
 DEFS.push({k:'hourly',...gv(FID.sysco,"'Hourly Sales'!A:E"),every:60000,parse:parseHourly,ok:h=>S.some(s=>Object.keys(h[s]).length)});
 DEFS.push({k:'tips:summary',...gv(FID.tips,'Summary!A3:E400'),every:60000,parse:r=>parseTipsSummary(r,CFG.year),ok:p=>p.length>=10});
 DEFS.push({k:'enh:totals',...gv(FID.enh,'Totals!A1:K24'),every:120000,parse:parseEnhTotals,ok:t=>t.items.length>=5});
@@ -850,7 +879,7 @@ DEFS.push({k:'cookie:totals',...gv(FID.cookie,'Totals!A1:I16'),every:120000,pars
 DEFS.push({k:'cookie:orders',...gv(FID.cookie,"'Cookie Orders'!A1:O40"),every:120000,parse:parseCookieOrders,ok:()=>true});
 const SNAP={};const fx=D.fx;
 S.forEach(s=>{SNAP['sales:'+s]=parseGrid(fx.sales[s]);SNAP['labor:'+s]=parseGrid(fx.labor[s]);SNAP['par:'+s]=fx.par[s];SNAP['drv:'+s]=fx.par.modified[s]});
-SNAP.sysco=parseSysco(fx.sysco);SNAP.hourly=parseHourly([]);SNAP['burn:enh']=[];SNAP['burn:cookie']=[];SNAP['tips:summary']=parseTipsSummary(fx.tips.summary,CFG.year);SNAP['enh:totals']=parseEnhTotals(fx.enh.totals);SNAP['enh:usage']=parseEnhUsage(fx.enh.usage);SNAP['enh:order']=parseEnhOrder(fx.enh.order);SNAP['enh:gnc']=parseGnc(fx.enh.gnc);SNAP['enh:storelog']=parseEnhStoreLog(fx.enh.storelog||[]);SNAP['cookie:totals']=parseCookieTotals(fx.cookie.totals);SNAP['cookie:orders']=parseCookieOrders(fx.cookie.orders);
+SNAP.sysco=parseSysco(fx.sysco);SNAP.hourly=parseHourly([]);SNAP.roster=[];SNAP['burn:enh']=[];SNAP['burn:cookie']=[];SNAP['tips:summary']=parseTipsSummary(fx.tips.summary,CFG.year);SNAP['enh:totals']=parseEnhTotals(fx.enh.totals);SNAP['enh:usage']=parseEnhUsage(fx.enh.usage);SNAP['enh:order']=parseEnhOrder(fx.enh.order);SNAP['enh:gnc']=parseGnc(fx.enh.gnc);SNAP['enh:storelog']=parseEnhStoreLog(fx.enh.storelog||[]);SNAP['cookie:totals']=parseCookieTotals(fx.cookie.totals);SNAP['cookie:orders']=parseCookieOrders(fx.cookie.orders);
 const SNAPTABS=Object.values(fx.tips.tabs).map(parseTipsTab);
 const LIVE={},STS={},TABW={};let mcp=null,pending=true,current='Overview',lastSig='';
 const AUTHZ=new Set(['needs_reauth','server_not_connected','blocked_by_policy','approval_required','not_in_manifest','selection_required']);
@@ -863,7 +892,7 @@ function errText(code,msg){return({needs_reauth:'Google needs to be reconnected.
 function build(){const live=m=>MODS[m].every(k=>LIVE[k]);const cl=live('core');
  const Sg={},Lg={};S.forEach(s=>{Sg[s]=cl?LIVE['sales:'+s]:SNAP['sales:'+s];Lg[s]=cl?LIVE['labor:'+s]:SNAP['labor:'+s]});
  const res=computeLive(Sg,Lg),asOf=Date.parse(res.meta.asOf);
- res.sysco=syscoWeekly(gk('sysco'),res.weeks,res.weekly);res.hourly=computeHourly(gk('hourly'));res.burn=computeBurn(gk('burn:enh'),gk('burn:cookie'));
+ res.sysco=syscoWeekly(gk('sysco'),res.weeks,res.weekly);res.hourly=computeHourly(gk('hourly'));{const n=new Date();res.roster=computeRoster(gk('roster'),n.getFullYear()+'-'+(n.getMonth()+1)+'-'+n.getDate())}res.burn=computeBurn(gk('burn:enh'),gk('burn:cookie'));
  const per=gk('tips:summary');res.tips=computeTips(per,res.sumSales,asOf);{const cp=per.filter(p=>p.start<=asOf&&p.end>=asOf).sort((a,b)=>b.start-a.start)[0];res.tipsNow=computeTipsNow(per,asOf,res.sumSales,cp?LIVE['tips:tab:'+cp.label]:null)}
  const tabKeys=Object.keys(LIVE).filter(k=>k.startsWith('tips:tab:'));res.spikes=tipSpikes(live('tips')?tabKeys.map(k=>LIVE[k]):SNAPTABS);
  const lastBy=log=>{const o={};(log||[]).forEach(x=>{if(!o[x.store]||x.t>o[x.store])o[x.store]=x.t});return o};res.enhCounts=lastBy(gk('enh:storelog'));res.cookieCounts=lastBy(gk('cookie:storelog'));res.enhModified=LIVE['drv:enh']||null;res.enh=computeEnh(gk('enh:totals'),gk('enh:usage'),gk('enh:order'));res.gnc=gk('enh:gnc');res.storeBurn=computeStoreBurn(gk('enh:storelog')||[],salesLookup(Sg,res.meta.year));res.intensity=enhIntensity(res.storeBurn);

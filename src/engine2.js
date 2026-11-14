@@ -91,6 +91,19 @@ function enhIntensity(burn){const out={};Object.keys(burn||{}).forEach(item=>{co
 // Only hours with activity have rows, so a missing hour is zero. Checks are real for Massillon only, never read a blank as zero.
 // Ashland and Wadsworth hourly money is item level (POS Sales Mix) and does not tie to the Daily Log, so it is for shape and share only.
 const HOURLY_CHECK_STORES={Massillon:1};
+// Roster: one row per employee. Raise age is whole calendar months from Last Pay Raise Date to today (Hire Date when no raise is recorded).
+// Yellow at 6 months, red at 12. Dates are yyyy-mm-dd, m/d/yyyy also read. Pay rates are never read here.
+function rdate(v){const t=String(v==null?'':v).trim();let m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);if(m)return{y:+m[1],m:+m[2],d:+m[3]};m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(t);return m?{y:+m[3],m:+m[1],d:+m[2]}:null}
+function rmonths(a,t){let n=(t.y-a.y)*12+(t.m-a.m);if(t.d<a.d)n--;return n}
+function computeRoster(rows,today){const out={stores:{Ashland:[],Wadsworth:[],Massillon:[]},total:0,yellow:0,red:0,unknown:0};if(!rows||!rows.length)return out;
+ const h=(rows[0]||[]).map(x=>String(x==null?'':x).trim().toLowerCase()),ix=n=>h.indexOf(n),iS=ix('store'),iF=ix('first name'),iL=ix('last name'),iH=ix('hire date'),iR=ix('last pay raise date'),iZ=ix('seasonal');
+ if(iS<0||iF<0)return out;const t=rdate(today);
+ rows.slice(1).forEach(r=>{const st=String(r[iS]||'').trim(),a=out.stores[st];if(!a)return;const name=(String(r[iF]||'').trim()+' '+String(r[iL]==null?'':r[iL]).trim()).trim();if(!name)return;
+  const rr=iR>=0?rdate(r[iR]):null,hh=iH>=0?rdate(r[iH]):null,base=rr||hh,months=base&&t?rmonths(base,t):null,
+   level=months==null?null:months>=12?'red':months>=6?'yellow':'ok';
+  a.push({name,store:st,raise:rr?(r[iR]+'').trim():null,hire:hh?(r[iH]+'').trim():null,since:rr?'raise':hh?'hire':null,months,level,seasonal:iZ>=0&&String(r[iZ]||'').trim()!==''});
+  out.total++;if(level==='red')out.red++;else if(level==='yellow')out.yellow++;else if(level==null)out.unknown++});
+ Object.keys(out.stores).forEach(k=>out.stores[k].sort((a,b)=>(b.months==null?-1:b.months)-(a.months==null?-1:a.months)||a.name.localeCompare(b.name)));return out}
 function parseHourly(rows){const out={Ashland:{},Wadsworth:{},Massillon:{}};
  (rows||[]).forEach(r=>{if(!r)return;const d=String(r[0]==null?'':r[0]).trim(),st=String(r[1]==null?'':r[1]).trim();
   if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!out[st])return;
@@ -130,4 +143,4 @@ function computeBurn(enh,cookie){const ST=['Ashland','Wadsworth','Massillon'],ki
   out.kinds[k]=o});
  out.attention.sort((a,b)=>(a.st==='out'?0:1)-(b.st==='out'?0:1)||(a.cover==null?99:a.cover)-(b.cover==null?99:b.cover));
  return out}
-if(typeof module!=='undefined')module.exports={salesLookup,enhIntensity,parseBurn,computeBurn,parseHourly,computeHourly,parseEnhStoreLog,computeStoreBurn,parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};
+if(typeof module!=='undefined')module.exports={computeRoster,salesLookup,enhIntensity,parseBurn,computeBurn,parseHourly,computeHourly,parseEnhStoreLog,computeStoreBurn,parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};

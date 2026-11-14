@@ -1,7 +1,7 @@
-const tabs=['Overview','Sales','Hourly','Labor','Tips','Supply','Orders','All data','Data health'];
+const tabs=['Overview','Sales','Hourly','Labor','Tips','Staffing','Supply','Orders','All data','Data health'];
 const GS='Google Sheets',GD='Google Drive',FID={roster:'1xjQEsUhP2Y-R_Xl0S5S3NCg_jF6KN5-d6yoqA4HJsek',sales:'1WTbr7-glp5qvUaic9Rmlg8BsB1XbP1FbqHffaIDMf6g',labor:'1j9Aep9pRCy-Os80DMD3zWnKCOpV3YVeakJuol9EqOE4',sysco:'18lcS1wZobeEVDsP4sumjXqhn298XzpsGuhXShoAKcxM',tips:'1yXfOsp9E6Qaiwq02LfobMQRZqEGBzktxJM_zHQmzFjc',enh:'1PBd6rouiKWmcOYpfXfsGhzpYqXcL_d5120e2UN19dAA',cookie:'1xqF-jZuhJUeitAZFKvudqB_2SqIFDO7vBU4KgBHRfg8',par:{Ashland:'1K2aGrtoBq_x2dTrzw3isz9fZ2ygDU16zGLZ2Y2jrDts',Wadsworth:'10j2P0GsB3f-gUgjSYHzkjo4op2Ui9LZHHJhT8hULOh4',Massillon:'1SGH3hq1KgAItnEksO7AiH0GrkYKVFUbtcH-9zrvYqPg'}};
-const MODS={core:[...S.map(s=>'sales:'+s),...S.map(s=>'labor:'+s)],sysco:['sysco'],tips:['tips:summary'],enh:['enh:totals','enh:usage','enh:order','enh:gnc'],par:S.map(s=>'par:'+s),hourly:['hourly'],burn:['burn:enh','burn:cookie'],cookie:['cookie:totals','cookie:orders']};
-const MODNAME={core:'Sales and labor',sysco:'Sysco',tips:'Tips',enh:'Enhancers',par:'PAR counts',hourly:'Hourly sales',burn:'Stock burn',cookie:'Cookies'};
+const MODS={core:[...S.map(s=>'sales:'+s),...S.map(s=>'labor:'+s)],sysco:['sysco'],tips:['tips:summary'],enh:['enh:totals','enh:usage','enh:order','enh:gnc'],par:S.map(s=>'par:'+s),hourly:['hourly'],burn:['burn:enh','burn:cookie'],roster:['roster'],cookie:['cookie:totals','cookie:orders']};
+const MODNAME={core:'Sales and labor',sysco:'Sysco',tips:'Tips',enh:'Enhancers',par:'PAR counts',hourly:'Hourly sales',burn:'Stock burn',roster:'Staffing',cookie:'Cookies'};
 const gv=(id,range,tool)=>({srv:GS,tool:'get_values',input:{spreadsheetId:id,range}});
 const DEFS=[];
 S.forEach(s=>{DEFS.push({k:'sales:'+s,...gv(FID.sales,`${s}!A3:N43`),every:30000,parse:r=>parseGrid(r),ok:g=>Object.keys(g.days).length>=28&&!!g.years[CFG.year-1]});
@@ -11,6 +11,7 @@ S.forEach(s=>{DEFS.push({k:'sales:'+s,...gv(FID.sales,`${s}!A3:N43`),every:30000
 DEFS.push({k:'sysco',...gv(FID.sysco,"'Sysco Orders'!A3:I400"),every:60000,parse:parseSysco,ok:o=>S.some(s=>o[s].length)});
 DEFS.push({k:'burn:enh',...gv(FID.enh,"'Burn Rate'!A1:J200"),every:300000,parse:parseBurn,ok:r=>r.length>0});
 DEFS.push({k:'burn:cookie',...gv(FID.cookie,"'Burn Rate'!A1:J200"),every:300000,parse:parseBurn,ok:r=>r.length>0});
+DEFS.push({k:'roster',...gv(FID.roster,'Roster!A1:Z400'),every:300000,parse:r=>r,ok:r=>r.length>1});
 DEFS.push({k:'hourly',...gv(FID.sysco,"'Hourly Sales'!A:E"),every:60000,parse:parseHourly,ok:h=>S.some(s=>Object.keys(h[s]).length)});
 DEFS.push({k:'tips:summary',...gv(FID.tips,'Summary!A3:E400'),every:60000,parse:r=>parseTipsSummary(r,CFG.year),ok:p=>p.length>=10});
 DEFS.push({k:'enh:totals',...gv(FID.enh,'Totals!A1:K24'),every:120000,parse:parseEnhTotals,ok:t=>t.items.length>=5});
@@ -24,7 +25,7 @@ DEFS.push({k:'cookie:totals',...gv(FID.cookie,'Totals!A1:I16'),every:120000,pars
 DEFS.push({k:'cookie:orders',...gv(FID.cookie,"'Cookie Orders'!A1:O40"),every:120000,parse:parseCookieOrders,ok:()=>true});
 const SNAP={};const fx=D.fx;
 S.forEach(s=>{SNAP['sales:'+s]=parseGrid(fx.sales[s]);SNAP['labor:'+s]=parseGrid(fx.labor[s]);SNAP['par:'+s]=fx.par[s];SNAP['drv:'+s]=fx.par.modified[s]});
-SNAP.sysco=parseSysco(fx.sysco);SNAP.hourly=parseHourly([]);SNAP['burn:enh']=[];SNAP['burn:cookie']=[];SNAP['tips:summary']=parseTipsSummary(fx.tips.summary,CFG.year);SNAP['enh:totals']=parseEnhTotals(fx.enh.totals);SNAP['enh:usage']=parseEnhUsage(fx.enh.usage);SNAP['enh:order']=parseEnhOrder(fx.enh.order);SNAP['enh:gnc']=parseGnc(fx.enh.gnc);SNAP['enh:storelog']=parseEnhStoreLog(fx.enh.storelog||[]);SNAP['cookie:totals']=parseCookieTotals(fx.cookie.totals);SNAP['cookie:orders']=parseCookieOrders(fx.cookie.orders);
+SNAP.sysco=parseSysco(fx.sysco);SNAP.hourly=parseHourly([]);SNAP.roster=[];SNAP['burn:enh']=[];SNAP['burn:cookie']=[];SNAP['tips:summary']=parseTipsSummary(fx.tips.summary,CFG.year);SNAP['enh:totals']=parseEnhTotals(fx.enh.totals);SNAP['enh:usage']=parseEnhUsage(fx.enh.usage);SNAP['enh:order']=parseEnhOrder(fx.enh.order);SNAP['enh:gnc']=parseGnc(fx.enh.gnc);SNAP['enh:storelog']=parseEnhStoreLog(fx.enh.storelog||[]);SNAP['cookie:totals']=parseCookieTotals(fx.cookie.totals);SNAP['cookie:orders']=parseCookieOrders(fx.cookie.orders);
 const SNAPTABS=Object.values(fx.tips.tabs).map(parseTipsTab);
 const LIVE={},STS={},TABW={};let mcp=null,pending=true,current='Overview',lastSig='';
 const AUTHZ=new Set(['needs_reauth','server_not_connected','blocked_by_policy','approval_required','not_in_manifest','selection_required']);
@@ -37,7 +38,7 @@ function errText(code,msg){return({needs_reauth:'Google needs to be reconnected.
 function build(){const live=m=>MODS[m].every(k=>LIVE[k]);const cl=live('core');
  const Sg={},Lg={};S.forEach(s=>{Sg[s]=cl?LIVE['sales:'+s]:SNAP['sales:'+s];Lg[s]=cl?LIVE['labor:'+s]:SNAP['labor:'+s]});
  const res=computeLive(Sg,Lg),asOf=Date.parse(res.meta.asOf);
- res.sysco=syscoWeekly(gk('sysco'),res.weeks,res.weekly);res.hourly=computeHourly(gk('hourly'));res.burn=computeBurn(gk('burn:enh'),gk('burn:cookie'));
+ res.sysco=syscoWeekly(gk('sysco'),res.weeks,res.weekly);res.hourly=computeHourly(gk('hourly'));{const n=new Date();res.roster=computeRoster(gk('roster'),n.getFullYear()+'-'+(n.getMonth()+1)+'-'+n.getDate())}res.burn=computeBurn(gk('burn:enh'),gk('burn:cookie'));
  const per=gk('tips:summary');res.tips=computeTips(per,res.sumSales,asOf);{const cp=per.filter(p=>p.start<=asOf&&p.end>=asOf).sort((a,b)=>b.start-a.start)[0];res.tipsNow=computeTipsNow(per,asOf,res.sumSales,cp?LIVE['tips:tab:'+cp.label]:null)}
  const tabKeys=Object.keys(LIVE).filter(k=>k.startsWith('tips:tab:'));res.spikes=tipSpikes(live('tips')?tabKeys.map(k=>LIVE[k]):SNAPTABS);
  const lastBy=log=>{const o={};(log||[]).forEach(x=>{if(!o[x.store]||x.t>o[x.store])o[x.store]=x.t});return o};res.enhCounts=lastBy(gk('enh:storelog'));res.cookieCounts=lastBy(gk('cookie:storelog'));res.enhModified=LIVE['drv:enh']||null;res.enh=computeEnh(gk('enh:totals'),gk('enh:usage'),gk('enh:order'));res.gnc=gk('enh:gnc');res.storeBurn=computeStoreBurn(gk('enh:storelog')||[],salesLookup(Sg,res.meta.year));res.intensity=enhIntensity(res.storeBurn);
