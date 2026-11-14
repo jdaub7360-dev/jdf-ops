@@ -32,7 +32,7 @@ details.stnd>summary::-webkit-details-marker{display:none}details.stnd>summary h
  head='<h2>Staffing</h2><p class="sub">Time since each person\'s last pay raise, so raises can stay on a six month rhythm. The colored badge shows how long it has been, yellow at 6 months and red at 12. Each store list is sorted by seniority, longest here first. Under each name is the last raise date, or the hire date when no raise is recorded, then how long they have been here. A small S after a name means seasonal.</p>';
  if(!modLive('roster')||!R0)return css+head+'<div class="card"><span class="tag warn">● Not connected</span> <span class="sub">Staffing reads straight from the Roster tab of the Pulp Employee Roster and Pay sheet and is not kept as a snapshot. This fills in as soon as Google Sheets answers for it.</span></div>';
  if(!R0.total)return css+head+'<div class="card"><p class="sub">The Roster tab has no employee rows yet.</p></div>';
- const all=S.flatMap(s=>R0.stores[s]),need=all.filter(x=>x.level==='red'||x.level==='yellow').sort((a,b)=>b.months-a.months||a.name.localeCompare(b.name)),cur=all.filter(x=>x.level==='ok').length,
+ const all=S.flatMap(s=>R0.stores[s]),need=all.filter(x=>x.level==='red'||x.level==='yellow').sort((a,b)=>b.months-a.months||(b.tenure==null?-1:b.tenure)-(a.tenure==null?-1:a.tenure)||a.name.localeCompare(b.name)),cur=all.filter(x=>x.level==='ok').length,
  sd2=x=>x.raise?esc(stSd(x.raise)):x.hire?esc(stSd(x.hire))+'<span class="hire">hired</span>':'<span class="src">none</span>',
  sub=(x,ss)=>(ss?x.store+' · ':'')+(x.raise?'Raised '+stSd(x.raise):x.hire?'Hired '+stSd(x.hire):'No dates')+(x.tenure!=null&&x.tenure>=0?' · '+stTen(x.tenure)+' here':''),
  rt=x=>x.rate!=null?'$'+x.rate.toFixed(2):'<span class="src">none</span>',
