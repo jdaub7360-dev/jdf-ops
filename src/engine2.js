@@ -101,7 +101,7 @@ function computeRoster(rows,today){const out={stores:{Ashland:[],Wadsworth:[],Ma
  rows.slice(1).forEach(r=>{const st=String(r[iS]||'').trim(),a=out.stores[st];if(!a)return;const name=(String(r[iF]||'').trim()+' '+String(r[iL]==null?'':r[iL]).trim()).trim();if(!name)return;
   const rr=iR>=0?rdate(r[iR]):null,hh=iH>=0?rdate(r[iH]):null,base=rr||hh,months=base&&t?rmonths(base,t):null,
    level=months==null?null:months>=12?'red':months>=6?'yellow':'ok',rt=iP>=0?parseFloat(String(r[iP]==null?'':r[iP]).replace(/[$,\s]/g,'')):NaN,sm=iN>=0?/shirt\s*size\s*[-:]?\s*([A-Za-z0-9 ]+)/i.exec(String(r[iN]||'')):null;
-  a.push({name,store:st,raise:rr?(r[iR]+'').trim():null,hire:hh?(r[iH]+'').trim():null,since:rr?'raise':hh?'hire':null,months,level,seasonal:iZ>=0&&String(r[iZ]||'').trim()!=='',rate:isFinite(rt)?rt:null,shirt:sm?sm[1].trim():null});
+  a.push({name,store:st,tenure:hh&&t?rmonths(hh,t):null,raise:rr?(r[iR]+'').trim():null,hire:hh?(r[iH]+'').trim():null,since:rr?'raise':hh?'hire':null,months,level,seasonal:iZ>=0&&String(r[iZ]||'').trim()!=='',rate:isFinite(rt)?rt:null,shirt:sm?sm[1].trim():null});
   out.total++;if(level==='red')out.red++;else if(level==='yellow')out.yellow++;else if(level==null)out.unknown++});
  Object.keys(out.stores).forEach(k=>out.stores[k].sort((a,b)=>(b.months==null?-1:b.months)-(a.months==null?-1:a.months)||a.name.localeCompare(b.name)));return out}
 function parseHourly(rows){const out={Ashland:{},Wadsworth:{},Massillon:{}};

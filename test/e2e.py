@@ -62,7 +62,7 @@ try:
         check('assistant answers from tool results','average' in ans and 'days' in ans and 'Ashland' in ans)
         pg.click('#nav button[data-t="Staffing"]');pg.wait_for_timeout(1200);t=pg.inner_text('#main')
         check('staffing flags red at 12 months and yellow at 6',"12 months or more" in t and "6 to 12 months" in t and 'Needs attention' in t and 'Old Raise' in t and pg.evaluate("document.querySelectorAll('#stNeed .stg.r').length>=2 && document.querySelectorAll('#stNeed .stg.y').length>=1"))
-        check('staffing says when the hire date is used',pg.evaluate("[...document.querySelectorAll('.stt .hire')].length>=1"))
+        check('staffing says Hired when no raise is recorded and shows time here',pg.evaluate("[...document.querySelectorAll('.stt .n2')].some(e=>e.textContent.includes('Hired')&&e.textContent.includes('here'))"))
         pg.evaluate("document.querySelector('#stNeed summary').click()");pg.wait_for_timeout(300)
         check('staffing needs attention collapses to a small view and by store stays visible',pg.evaluate("!document.getElementById('stNeed').open")and pg.evaluate("!document.querySelector('#stNeed table').checkVisibility()") and 'By store' in pg.inner_text('#main'))
         pg.click('#nav button[data-t="Overview"]');pg.click('#nav button[data-t="Staffing"]');pg.wait_for_timeout(500)
