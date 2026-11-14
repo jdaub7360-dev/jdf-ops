@@ -14,4 +14,6 @@ const q=E.computeRoster([H,["Ashland","A","B","X","$13.50","Shirt Size - Large",
 assert.strictEqual(q[0].rate,13.5);assert.strictEqual(q[0].shirt,'Large');assert.strictEqual(q[1].rate,null);assert.strictEqual(q[1].shirt,null);
 assert.strictEqual(by('E Five').tenure,1);// hired 2026-10-01, 1 month
 assert.strictEqual(by('F Six').tenure,null);
+const kk=E.computeRoster([H,['Ashland','K','Yes','X','13','','2024-01-01',''],['Ashland','N','No','','13','','2024-01-01','']],'2026-11-13').stores.Ashland;
+assert.strictEqual(kk.find(x=>x.name==='K Yes').key,true);assert.strictEqual(kk.find(x=>x.name==='N No').key,false);
 console.log('roster ok');
