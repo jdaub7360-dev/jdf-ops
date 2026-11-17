@@ -1,0 +1,156 @@
+{
+ "Massillon": [
+  [
+   "Item",
+   "Last Count",
+   "Quantity On Hand",
+   "Used Last Interval",
+   "Burn (per week)",
+   "Weeks of Cover",
+   "Projected Run-Out",
+   "Notes"
+  ],
+  [
+   "Strawberries",
+   "2026-11-16",
+   "3 box",
+   "0",
+   "0",
+   "",
+   "",
+   "No use over the Nov 12 to Nov 16 interval (4 days); Received unknown, treated as 0"
+  ],
+  [
+   "Peaches",
+   "2026-11-16",
+   "2 1/2 box",
+   "",
+   "",
+   "",
+   "",
+   "Stock rose over the Nov 12 to Nov 16 interval (a Sysco delivery landed inside the window and line items are not captured); burn starts at the next clean interval"
+  ],
+  [
+   "Almond Milk",
+   "2026-11-16",
+   "11 cartons",
+   "2",
+   "3.5",
+   "3.14",
+   "2026-12-08",
+   "First burn interval Nov 12 to Nov 16 (4 days). Received unknown (Sysco line items not captured), treated as 0, so burn is a floor if a delivery landed"
+  ],
+  [
+   "Heavy Whipping Cream",
+   "2026-11-16",
+   "8 cartons",
+   "1",
+   "1.75",
+   "4.57",
+   "2026-12-18",
+   "First burn interval Nov 12 to Nov 16 (4 days). Received unknown (Sysco line items not captured), treated as 0, so burn is a floor if a delivery landed"
+  ],
+  [
+   "Yogurt",
+   "2026-11-16",
+   "6",
+   "2",
+   "3.5",
+   "1.71",
+   "2026-11-28",
+   "First burn interval Nov 12 to Nov 16 (4 days). Received unknown (Sysco line items not captured), treated as 0, so burn is a floor if a delivery landed"
+  ],
+  [
+   "Ginger",
+   "2026-11-16",
+   "NONE",
+   "1.5",
+   "2.62",
+   "0",
+   "Out now",
+   "First burn interval Nov 12 to Nov 16 (4 days). Received unknown (Sysco line items not captured), treated as 0, so burn is a floor if a delivery landed"
+  ],
+  [
+   "Oranges",
+   "2026-11-16",
+   "1 1/2 box",
+   "2.5",
+   "4.38",
+   "0.34",
+   "2026-11-18",
+   "First burn interval Nov 12 to Nov 16 (4 days). Received unknown (Sysco line items not captured), treated as 0, so burn is a floor if a delivery landed"
+  ],
+  [
+   "Celery",
+   "2026-11-16",
+   "1/2 bag",
+   "2",
+   "3.5",
+   "0.29",
+   "2026-11-18",
+   "First burn interval Nov 12 to Nov 16 (4 days). Received unknown (Sysco line items not captured), treated as 0, so burn is a floor if a delivery landed"
+  ],
+  [
+   "Chocolate",
+   "2026-11-16",
+   "12 bottles (24 oz)",
+   "12",
+   "21",
+   "0.57",
+   "2026-11-20",
+   "First burn interval Nov 12 to Nov 16 (4 days). Received unknown (Sysco line items not captured), treated as 0, so burn is a floor if a delivery landed"
+  ],
+  [
+   "Avocado",
+   "2026-11-16",
+   "10 package ",
+   "",
+   "",
+   "",
+   "",
+   "Stock rose over the Nov 12 to Nov 16 interval (a Sysco delivery landed inside the window and line items are not captured); burn starts at the next clean interval"
+  ]
+ ],
+ "Ashland": [
+  [
+   "Mangos",
+   "2026-11-15",
+   "0.5",
+   "2.25",
+   "5.25",
+   "0.1",
+   "2026-11-16",
+   "First burn interval Nov 12 to Nov 15 (3 days). Received unknown (Sysco line items not captured), treated as 0, so burn is a floor if a delivery landed"
+  ],
+  [
+   "Dragon Fruit",
+   "2026-11-15",
+   "1",
+   "0.25",
+   "0.58",
+   "1.72",
+   "2026-11-27",
+   "First burn interval Nov 12 to Nov 15 (3 days). Received unknown (Sysco line items not captured), treated as 0, so burn is a floor if a delivery landed"
+  ],
+  [
+   "Strawberries",
+   "2026-11-15",
+   "2.5",
+   "",
+   "",
+   "",
+   "",
+   "Stock rose over the Nov 12 to Nov 15 interval (a Sysco delivery landed inside the window and line items are not captured); burn starts at the next clean interval"
+  ],
+  [
+   "Cheddar Cheese",
+   "2026-11-15",
+   "1 BAG",
+   "0",
+   "0",
+   "",
+   "",
+   "No use over the Nov 12 to Nov 15 interval (3 days); Received unknown, treated as 0"
+  ]
+ ]
+}

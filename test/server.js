@@ -6,6 +6,7 @@ const url = require('node:url');
 const path = require('node:path');
 const F = require('../src/fixtures.json');
 const BURN = require('./burn.fixture.json'); // Burn Rate rows copied from the live tabs on 2026-11-11 plus one sample row under two weeks, test only
+const PARBURN = require('./parburn.fixture.json'); // Sysco item Burn Rate rows trimmed from the live store PAR sheets on 2026-11-17, test only. Wadsworth has no tab, as live.
 const ROSTER = require('./roster.fixture.json'); // invented sample employees, test only
 const HOURLY = require('./hourly.fixture.json'); // sample Hourly Sales rows, test only, never shipped in the dashboard
 const g = require('../lib/google');
@@ -21,7 +22,7 @@ g.getValues = async (id, range) => {
   else if (id.startsWith('1PBd')) v = tab === 'Burn Rate' ? BURN.enh : tab === 'Totals' ? F.enh.totals : tab === 'Usage' ? F.enh.usage : tab === 'Order' ? F.enh.order : tab === 'Enhancer Store Log' ? F.enh.storelog : F.enh.gnc;
   else if (id.startsWith('1xjQ')) v = ROSTER;
   else if (id.startsWith('1xqF')) v = tab === 'Burn Rate' ? BURN.cookie : range.startsWith('Totals') ? F.cookie.totals : F.cookie.orders;
-  else { const k = Object.keys(parById).find((x) => id.startsWith(x)); v = F.par[parById[k]]; }
+  else { const k = Object.keys(parById).find((x) => id.startsWith(x)); v = tab === 'Burn Rate' ? PARBURN[parById[k]] : F.par[parById[k]]; }
   if (!v) throw Object.assign(new Error('no sample data'), { code: 'tool_error' });
   return { range, values: v };
 };

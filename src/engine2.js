@@ -134,13 +134,27 @@ function parseBurn(rows){const items=[],ds=v=>{const t=String(v==null?'':v).trim
  (rows||[]).forEach((r,i)=>{if(!r)return;const st=String(r[0]==null?'':r[0]).trim(),it=String(r[1]==null?'':r[1]).trim();if(!st||!it||(i===0&&/^store$/i.test(st)))return;
   items.push({store:st,item:it,count:ds(r[2]),stock:nz(r[3]),used:nz(r[4]),burn:nz(r[5]),co:nz(r[6]),cover:nz(r[7]),runout:ds(r[8]),note:String(r[9]==null?'':r[9]).trim()})});
  return items}
-function computeBurn(enh,cookie){const ST=['Ashland','Wadsworth','Massillon'],kinds={enh:enh||[],cookie:cookie||[]},out={kinds:{},attention:[],pending:0,nocount:0},rank={out:0,under2:1,ok:1,pending:2,nocount:3};
+// Sysco item burn: the Burn Rate tab on each store's Live PAR sheet, kept by Pacer from the Monday and Thursday counts.
+// Columns: Item, Last Count, Quantity On Hand (text in the store's own unit, like 2 1/2 box), Used Last Interval, Burn per week, Weeks of Cover, Projected Run-Out, Notes.
+// Ashland has no header row and Wadsworth has no tab yet, so a row counts only when its Last Count is a date. NONE is a real zero. A blank burn means a delivery landed in the window and burn starts at the next count. A burn of 0 with blank cover is real no use.
+function qtyNum(t){t=String(t==null?'':t).trim();if(/^none$/i.test(t))return 0;let m;
+ if(m=t.match(/^(\d+)\s+(\d+)\/(\d+)/))return +m[1]+m[2]/m[3];if(m=t.match(/^(\d+)\/(\d+)/))return m[1]/m[2];if(m=t.match(/^(\d+(?:\.\d+)?)/))return +m[1];return null}
+function parseBurnPar(rows,store){const out=[],ds=v=>{const t=String(v==null?'':v).trim();return /^\d{4}-\d{2}-\d{2}$/.test(t)?t:null},nz=v=>{const t=String(v==null?'':v).trim();return t===''?null:num(t)};
+ (rows||[]).forEach(r=>{if(!r)return;const it=String(r[0]==null?'':r[0]).trim(),cnt=ds(r[1]);if(!it||!cnt)return;const tx=String(r[2]==null?'':r[2]).trim();
+  out.push({store,item:it,count:cnt,stockTxt:tx,stock:qtyNum(tx),used:nz(r[3]),burn:nz(r[4]),co:null,cover:nz(r[5]),runout:ds(r[6]),note:String(r[7]==null?'':r[7]).trim()})});
+ return out}
+// Sysco spend: weekly dollars from the same logged orders as the percent of sales chart. A week counts only when all three stores logged two orders, so a partial week never looks like a drop.
+function syscoSpend(sy){const A=sy.Ashland||[],ok=A.map((r,i)=>STORES_.every(s=>sy[s][i]&&sy[s][i].n>=2)),out={weeks:A.filter((r,i)=>ok[i]).map(r=>r.week),stores:{}},avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+ STORES_.forEach(s=>{const v=sy[s].filter((r,i)=>ok[i]).map(r=>r.orders),l4=v.slice(-4),p4=v.slice(-8,-4),a=l4.length?r2(avg(l4)):null,b=p4.length===4&&l4.length===4?r2(avg(p4)):null;
+  out.stores[s]={vals:v,avg4:a,prev4:b,chg:a!=null&&b?r2(100*(a/b-1),1):null,n:l4.length}});return out}
+function syscoLast(orders,today){const out={};STORES_.forEach(s=>{const o=(orders[s]||[]).slice().sort((a,b)=>b.t-a.t)[0];out[s]=o?{date:new Date(o.t).toISOString().slice(0,10),total:o.total,days:Math.round((today-o.t)/864e5)}:null});return out}
+function computeBurn(enh,cookie,par){const ST=['Ashland','Wadsworth','Massillon'],kinds={enh:enh||[],cookie:cookie||[],par:par||[]},out={kinds:{},attention:[],pending:0,nocount:0},rank={out:0,under2:1,ok:1,idle:2,pending:3,nocount:4};
  Object.keys(kinds).forEach(k=>{const by={};ST.forEach(s=>by[s]=[]);kinds[k].forEach((x,i)=>{if(by[x.store])by[x.store].push(Object.assign({ord:i},x))});const o={};
-  ST.forEach(s=>{const rows=by[s].map(r=>Object.assign({},r,{st:r.stock===0?'out':r.stock==null?'nocount':r.cover!=null?(r.cover<2?'under2':'ok'):'pending'}));
+  ST.forEach(s=>{const rows=by[s].map(r=>Object.assign({},r,{st:r.stock===0?'out':r.stock==null?'nocount':r.cover!=null?(r.cover<2?'under2':'ok'):(k==='par'&&r.burn===0)?'idle':'pending'}));
    rows.sort((a,b)=>rank[a.st]-rank[b.st]||((a.st==='under2'||a.st==='ok')?a.cover-b.cover:0)||a.ord-b.ord);
    const dates=rows.map(r=>r.count).filter(Boolean).sort();o[s]={rows:rows,first:dates.length?dates[0]:null,last:dates.length?dates[dates.length-1]:null};
    rows.forEach(r=>{if(r.st==='out'||r.st==='under2')out.attention.push({kind:k,store:s,item:r.item,st:r.st,cover:r.cover,runout:r.runout,count:r.count,co:r.co});if(r.st==='pending')out.pending++;if(r.st==='nocount')out.nocount++})});
   out.kinds[k]=o});
  out.attention.sort((a,b)=>(a.st==='out'?0:1)-(b.st==='out'?0:1)||(a.cover==null?99:a.cover)-(b.cover==null?99:b.cover));
  return out}
-if(typeof module!=='undefined')module.exports={computeRoster,salesLookup,enhIntensity,parseBurn,computeBurn,parseHourly,computeHourly,parseEnhStoreLog,computeStoreBurn,parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};
+if(typeof module!=='undefined')module.exports={parseBurnPar,qtyNum,syscoSpend,syscoLast,computeRoster,salesLookup,enhIntensity,parseBurn,computeBurn,parseHourly,computeHourly,parseEnhStoreLog,computeStoreBurn,parseSysco,syscoWeekly,parseTipsSummary,computeTips,parseTipsTab,tipSpikes,parseEnhTotals,parseEnhUsage,parseEnhOrder,computeEnh,parseGnc,qtyInfo,analysePar,parseCookieTotals,parseCookieOrders};

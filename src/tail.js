@@ -11,6 +11,7 @@ S.forEach(s=>{DEFS.push({k:'sales:'+s,...gv(FID.sales,`${s}!A3:N43`),every:30000
 DEFS.push({k:'sysco',...gv(FID.sysco,"'Sysco Orders'!A3:I400"),every:60000,parse:parseSysco,ok:o=>S.some(s=>o[s].length)});
 DEFS.push({k:'burn:enh',...gv(FID.enh,"'Burn Rate'!A1:J200"),every:300000,parse:parseBurn,ok:r=>r.length>0});
 DEFS.push({k:'burn:cookie',...gv(FID.cookie,"'Burn Rate'!A1:J200"),every:300000,parse:parseBurn,ok:r=>r.length>0});
+S.forEach(s=>DEFS.push({k:'burn:par:'+s,...gv(FID.par[s],"'Burn Rate'!A1:H200"),every:300000,opt:true,parse:r=>parseBurnPar(r,s),ok:()=>true}));
 DEFS.push({k:'roster',...gv(FID.roster,'Roster!A1:Z400'),every:300000,parse:r=>r,ok:r=>r.length>1});
 DEFS.push({k:'hourly',...gv(FID.sysco,"'Hourly Sales'!A:E"),every:60000,parse:parseHourly,ok:h=>S.some(s=>Object.keys(h[s]).length)});
 DEFS.push({k:'tips:summary',...gv(FID.tips,'Summary!A3:E400'),every:60000,parse:r=>parseTipsSummary(r,CFG.year),ok:p=>p.length>=10});
@@ -38,7 +39,7 @@ function errText(code,msg){return({needs_reauth:'Google needs to be reconnected.
 function build(){const live=m=>MODS[m].every(k=>LIVE[k]);const cl=live('core');
  const Sg={},Lg={};S.forEach(s=>{Sg[s]=cl?LIVE['sales:'+s]:SNAP['sales:'+s];Lg[s]=cl?LIVE['labor:'+s]:SNAP['labor:'+s]});
  const res=computeLive(Sg,Lg),asOf=Date.parse(res.meta.asOf);
- res.sysco=syscoWeekly(gk('sysco'),res.weeks,res.weekly);res.hourly=computeHourly(gk('hourly'));{const n=new Date();res.roster=computeRoster(gk('roster'),n.getFullYear()+'-'+(n.getMonth()+1)+'-'+n.getDate())}res.burn=computeBurn(gk('burn:enh'),gk('burn:cookie'));
+ res.sysco=syscoWeekly(gk('sysco'),res.weeks,res.weekly);res.hourly=computeHourly(gk('hourly'));{const n=new Date();res.roster=computeRoster(gk('roster'),n.getFullYear()+'-'+(n.getMonth()+1)+'-'+n.getDate())}{const pb=[];S.forEach(s=>{const x=gk('burn:par:'+s);if(x)pb.push(...x)});res.burn=computeBurn(gk('burn:enh'),gk('burn:cookie'),pb);res.burn.parLive=S.filter(s=>LIVE['burn:par:'+s]!==undefined)}{const n=new Date();res.syscoSpend=syscoSpend(res.sysco);res.syscoLast=syscoLast(gk('sysco'),Date.UTC(n.getFullYear(),n.getMonth(),n.getDate()))}
  const per=gk('tips:summary');res.tips=computeTips(per,res.sumSales,asOf);{const cp=per.filter(p=>p.start<=asOf&&p.end>=asOf).sort((a,b)=>b.start-a.start)[0];res.tipsNow=computeTipsNow(per,asOf,res.sumSales,cp?LIVE['tips:tab:'+cp.label]:null)}
  const tabKeys=Object.keys(LIVE).filter(k=>k.startsWith('tips:tab:'));res.spikes=tipSpikes(live('tips')?tabKeys.map(k=>LIVE[k]):SNAPTABS);
  const lastBy=log=>{const o={};(log||[]).forEach(x=>{if(!o[x.store]||x.t>o[x.store])o[x.store]=x.t});return o};res.enhCounts=lastBy(gk('enh:storelog'));res.cookieCounts=lastBy(gk('cookie:storelog'));res.enhModified=LIVE['drv:enh']||null;res.enh=computeEnh(gk('enh:totals'),gk('enh:usage'),gk('enh:order'));res.gnc=gk('enh:gnc');res.storeBurn=computeStoreBurn(gk('enh:storelog')||[],salesLookup(Sg,res.meta.year));res.intensity=enhIntensity(res.storeBurn);
